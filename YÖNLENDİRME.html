@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pakettaxi Yönlendirme</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Chart.js Evrensel Paketi -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js"></script>
+    
+    <script>
+        Babel.registerPreset("react-classic", {
+            presets: [
+                [Babel.availablePresets["react"], { "runtime": "classic" }]
+            ]
+        });
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; font-size: 12px; margin: 0; padding: 0; }
+        .animate-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; overflow-x: auto; flex-wrap: nowrap; }
+        
+        .copy-btn { background: #eff6ff; color: #2563eb; padding: 4px; border-radius: 6px; cursor: pointer; transition: all 0.2s; border: 1px solid #bfdbfe; display: flex; align-items: center; justify-content: center; }
+        .copy-btn:hover { background: #dbeafe; transform: scale(1.05); }
+        .copy-btn:active { transform: scale(0.95); }
+        
+        .alignment-grid { display: grid !important; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) !important; gap: 8px; width: 100% !important; align-items: stretch !important; }
+        .table-row { background: white; border-radius: 12px; padding: 6px 8px; border: 1px solid #e2e8f0; margin-bottom: 8px; transition: all 0.2s ease; width: 100% !important; box-sizing: border-box; }
+        .table-row:hover { border-color: #2563eb; transform: translateY(-1px); box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1); }
+        .channel-card { border-radius: 8px; width: 100%; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; text-align: center; border-width: 1px; position: relative; overflow: hidden; }
+        .card-hemen { background-color: #fffaf5; border-color: #f97316; color: #9a3412; }
+        .card-yemek { background-color: #fff9f9; border-color: #ef4444; color: #991b1b; }
+        .card-dk45 { background-color: #f5fbff; border-color: #2563eb; color: #075985; }
+        
+        .header-pill { text-align: center; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px; border-radius: 8px; border-width: 2px; height: 26px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); width: 100%; }
+        .metric-title-bold { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; display: block; }
+        
+        .badge-status { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 950; text-transform: uppercase; border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); display: inline-flex; align-items: center; justify-content: center; min-width: 50px; }
+        .st-online { background: #22c55e; color: #ffffff; border-color: #16a34a; }
+        .st-offline { background: #ef4444; color: #ffffff; border-color: #dc2626; }
+        .st-kayip { background: #94a3b8; color: #ffffff; border-color: #64748b; }
+        .st-mola { background: #f59e0b; color: #ffffff; border-color: #d97706; }
+        
+        .classic-row { background: white; border-radius: 12px; padding: 10px; border: 1px solid #e2e8f0; margin-bottom: 10px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .classic-row.needy { background-color: #fff1f2; border-color: #fecdd3; }
+        
+        .analytics-data-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; }
+        .analytics-data-item { display: flex; flex-direction: column; background: #ffffff; padding: 4px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center; min-width: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .analytics-label { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; margin-bottom: 1px; }
+        .analytics-value { font-size: 14px; font-weight: 950; color: #0f172a; line-height: 1; }
+        
+        .value-box-analytics { background: #fff; border: 2px solid #e2e8f0; border-radius: 16px; padding: 8px 6px; font-weight: 950; text-align: center; min-width: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); gap: 4px; }
+        .routing-input { border: 2px solid #e2e8f0; border-radius: 10px; padding: 8px; font-weight: 800; width: 100%; background: white; font-size: 12px; outline: none; }
+        .routing-table { border-spacing: 0 6px; border-collapse: separate; width: 100%; }
+        .modal-overlay { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 9999; }
+        
+        input[type="text"]::-webkit-inner-spin-button, input[type="text"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" data-presets="env,react-classic">
+        const { useState, useMemo, useEffect, useCallback, Fragment, useRef } = React;
+        
+        const strategicCriticalConfig = [
+            { name: "AŞAĞI DUDULLU M MİGROS HEMEN BÖLGESİ", code: "1405", manualNeighbors: ["LENS ÇEKMEKÖY İSTANBUL MM", "REŞİT PAŞA CD ÜMRANİYE", "CANPARK AVM MMM"] },
+            { name: "VADİ İSTANBUL PARK M HEMEN+MACRO BÖLGESİ", code: "1201", manualNeighbors: ["MASLAK", "1453 MACRO", "KORDON KAĞITHANE İSTANBUL", "1997"] },
+            { name: "NİSPETİYE SANAL+HEMEN BÖLGESİ", code: "348", manualNeighbors: ["ŞİŞLİ GOLDEN", "GAYRETTEPE HAVUZ", "FULYA BEŞİKTAŞ MACRO", "GÜLBAĞ MECİDİYEKÖY", "IHLAMUR", "NİŞANTAŞI MACRO"] },
+            { name: "ORTAKÖY MMM SANAL+HEMEN BÖLGESİ", code: "332", manualNeighbors: ["332", "823", "1878", "16", "KURUÇEŞME", "IHLAMUR", "ŞİŞLİ GOLDEN"] },
+            { name: "ATAŞEHİR DARKSTORE +MİON", code: "1933", messengerAlias: "ATAŞEHİR DARKSTORE HEMEN+MİON BÖLGESİ", manualNeighbors: ["470", "1932", "KOCASİNAN CD ATAŞEHİR", "ŞENOL GÜNEŞ BLV", "ÜMRANİYE ŞERİFALİ VOLONY"] },
+            { name: "USKUMRUKÖY DÖRTYOL MM SANAL+ HEMEN BÖLGESİ", code: "68", manualNeighbors: ["68", "1175", "PELİKAN PARK ZEKERİYAKÖY"] },
+            { name: "KADIKÖY 2 HAVUZ BÖLGESİ", code: "792", manualNeighbors: ["792", "470", "770", "İÇERENKÖY", "KÜÇÜKYALI", "506"] },
+            { name: "KADIKÖY 1 HAVUZ BÖLGESİ", code: "635", manualNeighbors: ["635", "480", "428", "1932", "BAHARİYE KADIKÖY", "470", "KÜÇÜKYALI", "506"] },
+            { name: "BATI ATAŞEHİR İSTANBUL MM MİGROS HEMEN BÖLGESİ", code: "2123", manualNeighbors: ["1932", "1739", "506", "MAZHARBEY", "KOZYATAĞI", "REŞİT PAŞA"] },
+            { name: "MJET BAHARİYE KADIKÖY HEMEN BÖLGESİ", code: "428", manualNeighbors: ["635", "792", "480", "1932", "506", "470"] },
+            { name: "ÇAĞLAYAN ADLİYE İSTANBUL MM HEMEN BÖLGESİ", code: "1885", manualNeighbors: ["348", "1201", "GÜLBAĞ MECİDİYEKÖY", "FULYA BEŞİKTAŞ MACRO", "ŞİŞLİ GOLDEN", "1453 MACRO", "197"] }
+        ];
+        
+        const haversineDistance = (lat1, lon1, lat2, lon2) => {
+            if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+            const toRad = x => (x * Math.PI) / 180;
+            const R = 6371;
+            const dLat = toRad(lat2 - lat1);
+            const dLon = toRad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        };
+        const normalizeCode = (c) => (c || "").toString().trim().replace(/^0+(?!$)/, '');
+        const normalizeStr = (s) => s ? s.toString().replace(/ı/g, 'i').replace(/İ/g, 'I').toUpperCase().replace(/Ğ/g, 'G').replace(/Ü/g, 'U').replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C').trim().replace(/\s+/g, " ") : "";
+        const stripForMatch = (s) => {
+            if (!s) return "";
+            let cleaned = s.toString().trim().toLocaleLowerCase('tr-TR')
+                           .replace(/i̇/g, 'i').replace(/ı/g, 'i').replace(/ğ/g, 'g')
+                           .replace(/ü/g, 'u').replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c');
+            let words = cleaned.split(/[\s\-\+\(\)\[\]_]+/);
+            const ignoreWords = ["bolgesi", "bolge", "market", "ist", "istanbul", "mm", "mmm", "m", "migros", "hemen", "sanal", "macro"];
+            words = words.filter(w => w && !ignoreWords.includes(w));
+            return words.join('');
+        };
+        const getAblative = (name) => {
+            if (!name) return "";
+            let t = name.trim();
+            if (t === "ÇEVREDE UYGUN MAĞAZA BULUNAMADI") return t;
+            const lastWord = t.split(' ').pop();
+            if (lastWord === "MM" || lastWord === "MMM" || lastWord === "M") return t + "'DEN";
+            const lastChar = t.slice(-1).toLowerCase();
+            const vowels = t.match(/[aıoueiöü]/gi);
+            const lastVowel = vowels ? vowels[vowels.length - 1].toLowerCase() : 'e';
+            const isHard = /[fstkçşhp]/i.test(lastChar);
+            const isFront = /[eiöü]/i.test(lastVowel);
+            let suffix = isFront ? 'den' : 'dan';
+            if (isHard) { suffix = isFront ? 'ten' : 'tan'; } 
+            else if (/[aeıioöuü]/i.test(lastChar)) { suffix = "n" + suffix; }
+            return t + "'" + suffix.toUpperCase();
+        };
+
+        const calcPct = (newVal, oldVal) => {
+            if (newVal === undefined || newVal === '' || oldVal === undefined || oldVal === null || oldVal === 0) return null;
+            return ((parseFloat(newVal) - parseFloat(oldVal)) / parseFloat(oldVal)) * 100;
+        };
+
+        const renderPctChange = (pct) => {
+            if (pct === null || isNaN(pct)) return <div className="w-[40px] h-[22px] flex items-center justify-center font-black text-[10px] rounded border shadow-sm mx-auto bg-slate-50 border-slate-300 text-slate-500">-</div>;
+            // Positive is BAD (red), Negative is GOOD (green)
+            const isBad = pct > 0;
+            const isGood = pct < 0;
+            const bgClass = isBad ? 'bg-red-50 border-red-300 text-red-700' : isGood ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-slate-50 border-slate-300 text-slate-500';
+            return (
+                <div className={`w-[40px] h-[22px] flex items-center justify-center font-black text-[10px] rounded border shadow-sm mx-auto ${bgClass}`}>
+                    {isBad ? '+' : ''}{pct.toFixed(1)}%
+                </div>
+            );
+        };
+
+        const GridCardComp = React.memo(({ s, stats, trend, neighbors, isNeighborCard, isManual, onUpdateTrend, onCopySupport, onCopyAllOff, onCopySingleOff, onShowNeighbors, channelFilter }) => {
+            const kadro = stats ? stats.total : 0;
+            const offline = stats ? stats.offline + stats.kayip : 0;
+            const online = stats ? stats.online : 0;
+            
+            const dTop = (s.hemenToplama && s.hemenToplama > 0) ? s.hemenToplama : ((trend && trend.toplama != null && !isNaN(trend.toplama)) ? trend.toplama : 0);
+            const dLt = (s.hemenLT && s.hemenLT > 0) ? s.hemenLT : ((trend && trend.lt != null && !isNaN(trend.lt)) ? trend.lt : 0);
+            const dAtm = (s.hemenAtama && s.hemenAtama > 0) ? s.hemenAtama : (((trend && trend.lt != null && trend.toplama != null && !isNaN(trend.lt) && !isNaN(trend.toplama))) ? (trend.lt - trend.toplama) : 0);
+            
+            const bestHelper = neighbors ? neighbors.find(n => Math.abs((n.trendLt || 0) - (n.trendTop || 0)) <= 18 && (n.stats?.online >= 5)) : null;
+            const firstNeighborClean = bestHelper ? bestHelper.clean : null;
+
+            const cardClass = isNeighborCard 
+                ? "table-row alignment-grid animate-in cursor-default border-2 border-yellow-300 !bg-[#fefce8] shadow-sm" 
+                : "table-row alignment-grid animate-in cursor-default hover:border-blue-500";
+
+            return (
+                <div className={cardClass}>
+                    {/* SOL SÜTUN - MAĞAZA BİLGİSİ */}
+                    <div className="flex flex-col items-center justify-between lg:pr-2 lg:border-r border-slate-100 min-w-0 text-center relative h-full py-1">
+                        <div className="flex flex-col items-center gap-1 w-full">
+                            <div className="flex items-center justify-center gap-2 w-full px-1">
+                                {!isNeighborCard && (
+                                    <button onClick={(e) => onCopySupport(e, s, firstNeighborClean)} title="Otomatik En İyi Destek Mağazasını Kopyala" className="copy-btn shrink-0" style={{ width: '28px', height: '28px' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </button>
+                                )}
+                                <div className="text-[14px] lg:text-[16px] font-black uppercase text-slate-900 leading-tight tracking-tighter text-left line-clamp-2" title={s.clean}>
+                                    {s.clean}
+                                </div>
+                            </div>
+                            
+                            <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">{s.city} / {s.district}</span>
+
+                            <div className="flex items-center justify-center flex-wrap gap-1.5 mt-1">
+                                <div className="bg-blue-50 text-blue-700 border border-blue-200 rounded-md font-black italic text-[10px] px-2 py-0.5">OPH {(s.oph || 0).toFixed(2)}</div>
+                                <div className="bg-purple-50 text-purple-700 border border-purple-200 rounded-md font-black italic text-[10px] px-2 py-0.5 max-w-[80px] truncate" title={s.hemenReasonSnf || "-"}>SNF: {s.hemenReasonSnf || "-"}</div>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto w-full">
+                            <div className="flex justify-center gap-1 mt-2 mb-2">
+                                <span className="badge-status st-online">{online} ON</span>
+                                <span className="badge-status st-offline">{offline} OFF</span>
+                            </div>
+
+                            {!isNeighborCard && neighbors && neighbors.length > 0 && (
+                                <button onClick={() => onShowNeighbors(s, neighbors, 'all')} className="w-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 py-1.5 rounded-lg shadow-sm hover:bg-emerald-100 transition-all flex items-center justify-center gap-1 cursor-pointer mb-2">
+                                    ⚡ ÇEVRE MAĞAZALAR ({neighbors.length})
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* HEMEN KANALI */}
+                    <div className={`channel-card card-hemen !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'hemen' ? 'ring-2 ring-orange-400' : ''}`}>
+                        <div className="bg-orange-100 text-orange-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-orange-200 shrink-0">HEMEN KANALI</div>
+                        <div className="flex flex-col gap-1 p-1 flex-1 w-full h-full">
+                            {/* SİPARİŞ & ATAMA */}
+                            <div className="w-full flex items-stretch bg-white/60 rounded border border-orange-200 shrink-0 h-[38px] relative">
+                                <div className="flex flex-col items-center justify-center w-1/2 border-r border-orange-200/50">
+                                    <span className="metric-title-bold text-orange-900 !mb-0 text-[7px] text-center w-full">SİPARİŞ</span>
+                                    <span className="font-[950] text-[16px] text-orange-900 leading-none text-center w-full mt-0.5">{s.hemenSiparis || 0}</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center w-1/2">
+                                    <span className="metric-title-bold text-orange-900 !mb-0 text-[7px] text-center w-full">ATAMA SÜR.</span>
+                                    <span className={`font-[950] text-[16px] leading-none text-center w-full mt-0.5 ${(dAtm || 0) > (dTop || 0) && (dTop || 0) > 0 ? 'text-red-600' : 'text-orange-900'}`}>{(dAtm != null && !isNaN(dAtm)) ? dAtm.toFixed(1) : "0.0"}</span>
+                                </div>
+                            </div>
+                            
+                            {/* TOPLAMA */}
+                            <div className={`w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5`}>
+                                <span className="metric-title-bold text-[7px] mb-0.5 text-orange-900 text-center w-full">TOPLAMA</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[25%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            <span className="text-[16px] font-[950] leading-none tracking-tighter text-orange-600">{(dTop != null && !isNaN(dTop)) ? dTop.toFixed(1) : "0.0"}</span>
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">GENEL</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            <input type="text" className={`w-[40px] h-[22px] px-1 text-[11px] font-bold text-center mx-auto rounded border border-yellow-400 focus:outline-none transition-all ${dTop > 10 ? 'bg-red-900/90 border-red-400 text-white placeholder-red-300' : 'bg-yellow-50 text-slate-900 placeholder-slate-400'}`} placeholder="-" value={trend?.dk30Top !== undefined ? trend.dk30Top : ''} onChange={(e) => onUpdateTrend(s.clean, 'dk30Top', e.target.value)} />
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">SON Y.SAAT</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute left-[75%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            {renderPctChange(calcPct(trend?.dk30Top, dTop))}
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">DEĞİŞİM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* LEAD TIME */}
+                            <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                <span className="metric-title-bold text-[7px] mb-0.5 text-slate-900 text-center w-full">LEAD TIME</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[25%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            <span className="text-[16px] font-[950] leading-none tracking-tighter text-slate-800">{(dLt != null && !isNaN(dLt)) ? dLt.toFixed(1) : "0.0"}</span>
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">GENEL</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            <input type="text" className={`w-[40px] h-[22px] px-1 text-[11px] font-bold text-center mx-auto rounded border border-yellow-400 bg-yellow-50 text-slate-900 placeholder-slate-400 focus:outline-none transition-all`} placeholder="-" value={trend?.dk30Lt !== undefined ? trend.dk30Lt : ''} onChange={(e) => onUpdateTrend(s.clean, 'dk30Lt', e.target.value)} />
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">SON Y.SAAT</span>
+                                        </div>
+                                    </div>
+                                    <div className="absolute left-[75%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                        <div className="h-[22px] w-full flex items-center justify-center">
+                                            {renderPctChange(calcPct(trend?.dk30Lt, dLt))}
+                                        </div>
+                                        <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                            <span className="text-[7px] font-black uppercase text-slate-700 leading-none">DEĞİŞİM</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* YEMEK KANALI */}
+                    <div className={`channel-card card-yemek !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'yemek' ? 'ring-2 ring-red-400' : ''}`}>
+                        <div className="bg-red-100 text-red-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-red-200 shrink-0">YEMEK KANALI</div>
+                        <div className="flex flex-col gap-1 p-1 flex-1 w-full h-full">
+                            <div className="w-full flex items-stretch bg-white/60 rounded border border-red-200 shrink-0 h-[38px] relative">
+                                <div className="flex flex-col items-center justify-center py-1 w-1/2 border-r border-red-200/50">
+                                    <span className="metric-title-bold text-red-900 !mb-0 text-[7px] text-center w-full">SİPARİŞ</span>
+                                    <span className="font-[950] text-[16px] text-red-900 leading-none text-center w-full mt-0.5">{s.yemekSiparis || 0}</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center py-1 w-1/2">
+                                    <span className="metric-title-bold text-red-900 !mb-0 text-[7px] text-center w-full">ATAMA SÜR.</span>
+                                    <span className="font-[950] text-[16px] text-red-900 leading-none text-center w-full mt-0.5">{s.yemekAtama ? s.yemekAtama.toFixed(1) : "0.0"}</span>
+                                </div>
+                            </div>
+                            
+                            <div className={`w-full h-[48px] rounded shadow-sm bg-white/40 border border-slate-100 flex flex-col items-center justify-start shrink-0 opacity-80 relative pt-0.5`}>
+                                <span className="metric-title-bold opacity-100 text-[7px] mb-0.5 text-slate-500 text-center w-full">TOPLAMA</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                        <span className="text-[14px] font-[950] leading-none tracking-tighter text-slate-400">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                <span className="metric-title-bold text-[7px] mb-0.5 text-red-900 text-center w-full">LEAD TIME</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                        <span className="text-[16px] font-[950] leading-none tracking-tighter text-red-800">{s.yemekLT ? s.yemekLT.toFixed(1) : "0.0"}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 45 DK KANALI */}
+                    <div className={`channel-card card-dk45 !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'dk45' ? 'ring-2 ring-blue-400' : ''}`}>
+                        <div className="bg-blue-100 text-blue-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-blue-200 shrink-0">45 DK KANALI</div>
+                        <div className="flex flex-col gap-1 p-1 flex-1 w-full h-full">
+                            <div className="w-full flex items-stretch justify-between bg-white/60 rounded border border-blue-200 shrink-0 h-[38px] relative">
+                                <div className="flex flex-col items-center justify-center py-1 w-1/2 border-r border-blue-200/50">
+                                    <span className="metric-title-bold text-blue-900 !mb-0 text-[7px] text-center w-full">SİPARİŞ</span>
+                                    <span className="font-[950] text-[16px] text-blue-900 leading-none text-center w-full mt-0.5">{s.dk45Siparis || 0}</span>
+                                </div>
+                                <div className="flex flex-col items-center justify-center py-1 w-1/2">
+                                    <span className="metric-title-bold text-blue-900 !mb-0 text-[7px] text-center w-full">ATAMA SÜR.</span>
+                                    <span className="font-[950] text-[16px] text-blue-900 leading-none text-center w-full mt-0.5">{s.dk45Atama ? s.dk45Atama.toFixed(1) : "0.0"}</span>
+                                </div>
+                            </div>
+                            
+                            <div className={`w-full h-[48px] rounded shadow-sm flex flex-col items-center justify-start shrink-0 relative pt-0.5 ${s.dk45Toplama > 10 ? 'bg-red-700 text-white' : 'bg-white/80 border border-slate-100'}`}>
+                                <span className={`metric-title-bold text-[7px] mb-0.5 text-center w-full ${s.dk45Toplama > 10 ? 'text-white' : 'text-blue-900'}`}>TOPLAMA</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                        <span className="text-[16px] font-[950] leading-none tracking-tighter">{(s.dk45Toplama || 0).toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                <span className="metric-title-bold text-[7px] mb-0.5 text-blue-900 text-center w-full">LEAD TIME</span>
+                                <div className="w-full flex-1 relative flex items-center">
+                                    <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                        <span className="text-[16px] font-[950] leading-none tracking-tighter text-blue-800">{s.dk45LT ? s.dk45LT.toFixed(1) : "0.0"}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        const HorizontalCardComp = React.memo(({ s, stats, trend, neighbors, type, onUpdateTrend, onCopySupport, onShowNeighbors, channelFilter }) => {
+            const kadro = stats ? stats.total : 0;
+            const offline = stats ? stats.offline + stats.kayip : 0;
+            const online = stats ? stats.online : 0;
+            
+            const dTop = (s.hemenToplama && s.hemenToplama > 0) ? s.hemenToplama : ((trend && trend.toplama != null && !isNaN(trend.toplama)) ? trend.toplama : 0);
+            const dLt = (s.hemenLT && s.hemenLT > 0) ? s.hemenLT : ((trend && trend.lt != null && !isNaN(trend.lt)) ? trend.lt : 0);
+            const dAtm = (s.hemenAtama && s.hemenAtama > 0) ? s.hemenAtama : (((trend && trend.lt != null && trend.toplama != null && !isNaN(trend.lt) && !isNaN(trend.toplama))) ? (trend.lt - trend.toplama) : 0);
+
+            const atmColor = dAtm > 15 ? 'text-red-600' : 'text-blue-600';
+            
+            const bestHelper = neighbors ? neighbors.find(n => Math.abs((n.trendLt || 0) - (n.trendTop || 0)) <= 18 && (n.stats?.online >= 5)) : null;
+            const firstNeighborClean = bestHelper ? bestHelper.clean : null;
+
+            return (
+                <div className={`classic-row needy animate-in flex flex-col lg:flex-row gap-4 items-stretch justify-between`}>
+                    <div className="flex flex-col flex-1 max-w-full lg:max-w-[340px]">
+                        <div className="flex items-center gap-2 mb-2 w-full">
+                            <button onClick={(e) => onCopySupport(e, s, firstNeighborClean)} className="w-8 h-8 shrink-0 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all flex items-center justify-center shadow-sm" title="Otomatik En İyi Destek Mağazasını Kopyala">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </button>
+                            <h3 className="font-black text-[16px] text-gray-900 leading-tight truncate">{s.clean}</h3>
+                        </div>
+                        
+                        <div className="flex items-center justify-between w-full bg-white p-3 rounded-xl border border-slate-200 shadow-sm mt-2 mb-3">
+                            <div className="flex flex-col items-center flex-1 px-1 border-r border-slate-100">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">SİPARİŞ</span>
+                                <span className="font-[950] text-slate-900 text-[18px] leading-none">{trend?.anlikSiparis != null ? trend.anlikSiparis : s.hemenSiparis}</span>
+                            </div>
+                            <div className="flex flex-col items-center flex-1 px-1 border-r border-slate-100">
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-wider mb-1">OPH</span>
+                                <span className="font-[950] text-blue-700 text-[16px] leading-none">{(s.oph || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex flex-col items-center flex-1 px-1 border-r border-slate-100">
+                                <span className="text-[10px] font-black text-purple-500 uppercase tracking-wider mb-1">SNF</span>
+                                <span className="font-[950] text-purple-700 text-[14px] leading-none truncate max-w-[60px]" title={s.hemenReasonSnf}>{s.hemenReasonSnf || "-"}</span>
+                            </div>
+                            <div className="flex flex-col items-center flex-1 px-1">
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">KADRO</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-green-700 bg-green-100 px-1.5 py-0.5 rounded text-[11px] font-black leading-none">{online} ON</span>
+                                    <span className="text-red-700 bg-red-100 px-1.5 py-0.5 rounded text-[11px] font-black leading-none">{offline} OFF</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto w-full px-1">
+                            <button className="w-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-black uppercase py-2 rounded-lg hover:bg-emerald-100 flex justify-center items-center gap-1 shadow-sm transition-colors cursor-pointer" onClick={() => onShowNeighbors(s, neighbors, type)}>
+                                ⚡ ÇEVRE MAĞAZA LİSTESİ ({neighbors?.length || 0})
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-2 w-full h-full">
+                        {/* HEMEN KANALI */}
+                        <div className={`channel-card card-hemen !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'hemen' ? 'ring-2 ring-orange-400' : ''}`}>
+                            <div className="bg-orange-100 text-orange-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-orange-200 shrink-0">HEMEN KANALI</div>
+                            <div className="flex flex-col gap-1 p-1 flex-1 w-full">
+                                <div className="w-full flex items-stretch justify-between bg-white/50 rounded border border-orange-200 shrink-0 h-[38px]">
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2 border-r border-orange-200/50">
+                                        <span className="metric-title-bold opacity-80 !mb-0 text-[7px] leading-none mt-0.5">SİPARİŞ</span>
+                                        <span className="font-[950] block text-[16px] leading-tight mt-0.5 text-orange-900">{s.hemenSiparis || 0}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2">
+                                        <span className="metric-title-bold opacity-80 !mb-0 text-[7px] leading-none mt-0.5">ATAMA SÜR.</span>
+                                        <span className={`font-[950] block text-[16px] leading-tight mt-0.5 ${atmColor}`}>{(dAtm != null && !isNaN(dAtm)) ? dAtm.toFixed(1) : "0.0"}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                    <span className="metric-title-bold opacity-100 text-[7px] mb-0.5 text-orange-800 text-center w-full">TOPLAMA</span>
+                                    <div className="flex items-center justify-center w-full flex-1 relative">
+                                        <div className="absolute left-[25%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                <span className="text-[16px] font-[950] leading-none tracking-tighter text-orange-600">{(dTop != null && !isNaN(dTop)) ? dTop.toFixed(1) : "0.0"}</span>
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">GENEL</span>
+                                            </div>
+                                        </div>
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                <input type="text" className={`w-[40px] h-[22px] px-1 text-[11px] font-bold text-center mx-auto rounded border border-yellow-400 bg-yellow-50 text-slate-900 placeholder-slate-400 focus:outline-none transition-all`} placeholder="-" value={trend?.dk30Top !== undefined ? trend.dk30Top : ''} onChange={(e) => onUpdateTrend(s.clean, 'dk30Top', e.target.value)} />
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">SON Y.SAAT</span>
+                                            </div>
+                                        </div>
+                                        <div className="absolute left-[75%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                {renderPctChange(calcPct(trend?.dk30Top, dTop))}
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">DEĞİŞİM</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                    <span className="metric-title-bold opacity-100 text-[7px] mb-0.5 text-slate-800 text-center w-full">LEAD TIME</span>
+                                    <div className="flex items-center justify-center w-full flex-1 relative">
+                                        <div className="absolute left-[25%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                <span className="text-[16px] font-[950] leading-none tracking-tighter text-slate-800">{(dLt != null && !isNaN(dLt)) ? dLt.toFixed(1) : "0.0"}</span>
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">GENEL</span>
+                                            </div>
+                                        </div>
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                <input type="text" className={`w-[40px] h-[22px] px-1 text-[11px] font-bold text-center mx-auto rounded border border-yellow-400 bg-yellow-50 text-slate-900 placeholder-slate-400 focus:outline-none transition-all`} placeholder="-" value={trend?.dk30Lt !== undefined ? trend.dk30Lt : ''} onChange={(e) => onUpdateTrend(s.clean, 'dk30Lt', e.target.value)} />
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">SON Y.SAAT</span>
+                                            </div>
+                                        </div>
+                                        <div className="absolute left-[75%] -translate-x-1/2 flex flex-col items-center w-[60px]">
+                                            <div className="h-[22px] w-full flex items-center justify-center">
+                                                {renderPctChange(calcPct(trend?.dk30Lt, dLt))}
+                                            </div>
+                                            <div className="h-[10px] w-full flex items-center justify-center mt-0.5">
+                                                <span className="text-[7px] font-black opacity-100 uppercase text-slate-700 leading-none">DEĞİŞİM</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* YEMEK KANALI */}
+                        <div className={`channel-card card-yemek !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'yemek' ? 'ring-2 ring-red-400' : ''}`}>
+                            <div className="bg-red-100 text-red-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-red-200 shrink-0">YEMEK KANALI</div>
+                            <div className="flex flex-col gap-1 p-1 flex-1 w-full h-full">
+                                <div className="w-full flex items-stretch bg-white/60 rounded border border-red-200 shrink-0 h-[38px] relative">
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2 border-r border-red-200/50">
+                                        <span className="metric-title-bold text-red-900 !mb-0 text-[7px] text-center w-full">SİPARİŞ</span>
+                                        <span className="font-[950] text-[16px] text-red-900 leading-none text-center w-full mt-0.5">{s.yemekSiparis || 0}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2">
+                                        <span className="metric-title-bold text-red-900 !mb-0 text-[7px] text-center w-full">ATAMA SÜR.</span>
+                                        <span className="font-[950] text-[16px] text-red-900 leading-none text-center w-full mt-0.5">{s.yemekAtama ? s.yemekAtama.toFixed(1) : "0.0"}</span>
+                                    </div>
+                                </div>
+                                <div className={`w-full h-[48px] rounded shadow-sm bg-white/40 border border-slate-100 flex flex-col items-center justify-start shrink-0 opacity-80 relative pt-0.5`}>
+                                    <span className="metric-title-bold opacity-100 text-[7px] mb-0.5 text-slate-500 text-center w-full">TOPLAMA</span>
+                                    <div className="w-full flex-1 relative flex items-center">
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                            <span className="text-[14px] font-[950] leading-none tracking-tighter text-slate-400">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                    <span className="metric-title-bold text-[7px] mb-0.5 text-red-900 text-center w-full">LEAD TIME</span>
+                                    <div className="w-full flex-1 relative flex items-center">
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                            <span className="text-[16px] font-[950] leading-none tracking-tighter text-red-800">{s.yemekLT ? s.yemekLT.toFixed(1) : "0.0"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 45 DK KANALI */}
+                        <div className={`channel-card card-dk45 !p-0 flex flex-col justify-between h-full overflow-hidden ${channelFilter === 'dk45' ? 'ring-2 ring-blue-400' : ''}`}>
+                            <div className="bg-blue-100 text-blue-900 font-black text-[9px] py-1 w-full uppercase tracking-widest border-b border-blue-200 shrink-0">45 DK KANALI</div>
+                            <div className="flex flex-col gap-1 p-1 flex-1 w-full h-full">
+                                <div className="w-full flex items-stretch justify-between bg-white/60 rounded border border-blue-200 shrink-0 h-[38px] relative">
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2 border-r border-blue-200/50">
+                                        <span className="metric-title-bold text-blue-900 !mb-0 text-[7px] text-center w-full">SİPARİŞ</span>
+                                        <span className="font-[950] text-[16px] text-blue-900 leading-none text-center w-full mt-0.5">{s.dk45Siparis || 0}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center py-1 w-1/2">
+                                        <span className="metric-title-bold text-blue-900 !mb-0 text-[7px] text-center w-full">ATAMA SÜR.</span>
+                                        <span className="font-[950] text-[16px] text-blue-900 leading-none text-center w-full mt-0.5">{s.dk45Atama ? s.dk45Atama.toFixed(1) : "0.0"}</span>
+                                    </div>
+                                </div>
+                                <div className={`w-full h-[48px] rounded shadow-sm flex flex-col items-center justify-start shrink-0 relative pt-0.5 ${s.dk45Toplama > 10 ? 'bg-red-700 text-white' : 'bg-white/80 border border-slate-100'}`}>
+                                    <span className={`metric-title-bold text-[7px] mb-0.5 text-center w-full ${s.dk45Toplama > 10 ? 'text-white' : 'text-blue-900'}`}>TOPLAMA</span>
+                                    <div className="w-full flex-1 relative flex items-center">
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                            <span className="text-[16px] font-[950] leading-none tracking-tighter">{(s.dk45Toplama || 0).toFixed(1)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="w-full h-[48px] rounded shadow-sm bg-white/80 border border-slate-100 flex flex-col items-center justify-start shrink-0 relative pt-0.5">
+                                    <span className="metric-title-bold text-[7px] mb-0.5 text-blue-900 text-center w-full">LEAD TIME</span>
+                                    <div className="w-full flex-1 relative flex items-center">
+                                        <div className="absolute left-[50%] -translate-x-1/2 flex flex-col items-center w-full">
+                                            <span className="text-[16px] font-[950] leading-none tracking-tighter text-blue-800">{s.dk45LT ? s.dk45LT.toFixed(1) : "0.0"}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        const ModalNeighborCard = React.memo(({ n, isBad, onUpdateTrend }) => {
+            const kadro = n.stats ? n.stats.total : 0;
+            const on = n.stats ? n.stats.online : 0;
+            const off = n.stats ? n.stats.offline + n.stats.kayip : 0;
+            const containerBg = isBad ? 'bg-[#fff1f2] border-[#fecdd3]' : 'bg-[#f0fdf4] border-[#bbf7d0]';
+            
+            return (
+                <div className={`border-4 ${containerBg} rounded-[16px] p-3 mb-3 relative shadow-md hover:shadow-lg transition-all`}>
+                    <div className="flex justify-between items-center mb-3">
+                        <div className="font-[950] text-[16px] text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                            {n.clean}
+                            {n.isManual && <span className="ml-2 inline-flex items-center text-[9px] bg-yellow-200 text-yellow-800 px-2 py-1 rounded-lg shadow-sm border border-yellow-400 align-middle">MANUEL</span>}
+                            {!n.isManual && n.distance != null && <span className="ml-2 inline-flex items-center text-[12px] bg-blue-100 text-blue-800 px-2 py-1 rounded-lg shadow-sm border border-blue-300 align-middle" title="Kuş Uçuşu (Düz Çizgi) Mesafesi">📍 {n.distance.toFixed(1)} KM</span>}
+                            {!n.isManual && n.distance == null && <span className="ml-2 inline-flex items-center text-[12px] bg-purple-100 text-purple-800 px-2 py-1 rounded-lg shadow-sm border border-purple-300 align-middle">🏢 İL/İLÇE</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {isBad && (
+                                <div className="text-[9px] font-black uppercase px-2 py-1 rounded-lg bg-red-100 text-red-800 border-2 border-red-200 shadow-sm flex items-center gap-1" title="Toplama süresi yüksek!">
+                                    ⚠️ YÜKSEK TOPLAMA
+                                </div>
+                            )}
+                            <div className="flex bg-slate-100 border-2 border-slate-200 rounded-lg shadow-sm overflow-hidden text-[11px] font-black">
+                                <div className="px-3 py-1 bg-slate-200 text-slate-700">{kadro} KURYE</div>
+                                <div className="px-3 py-1 bg-emerald-500 text-white">{on} ON</div>
+                                <div className="px-3 py-1 bg-red-500 text-white">{off} OFF</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex border-2 border-orange-200 rounded-[12px] overflow-hidden bg-white shadow-inner h-auto">
+                        <div className="bg-orange-100 text-[#d97706] font-black px-1.5 flex items-center justify-center text-[10px] shrink-0 border-r-2 border-orange-200 uppercase tracking-widest" style={{writingMode: 'vertical-rl', transform: 'rotate(180deg)'}}>HEMEN</div>
+                        <div className="flex-1 flex flex-row divide-x-2 divide-slate-100">
+                            {/* TOPLAMA */}
+                            <div className="flex flex-col justify-start items-center py-2 px-1 hover:bg-slate-50 transition-colors w-1/3">
+                                <span className="text-[9px] text-slate-600 font-[900] uppercase mb-1 tracking-widest border-b border-slate-200 w-[90%] text-center pb-0.5 leading-tight">TOPLAMA</span>
+                                <div className="flex flex-row items-center justify-center gap-2 w-full mt-1">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[16px] font-[950] text-[#ea580c] leading-none drop-shadow-sm">{(n.trendTop != null && !isNaN(n.trendTop)) ? n.trendTop.toFixed(1) : "0.0"}</span>
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">GENEL</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <input type="text" className="w-[40px] h-[22px] text-center font-bold text-[11px] border border-yellow-400 bg-yellow-50 rounded shadow-inner focus:outline-none transition-all" placeholder="Y.SAAT" value={n.trend?.dk30Top !== undefined ? n.trend.dk30Top : ''} onChange={(e) => onUpdateTrend(n.clean, 'dk30Top', e.target.value)} />
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">Y.SAAT</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        {renderPctChange(calcPct(n.trend?.dk30Top, n.trendTop))}
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">DEĞİŞİM</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* ATAMA SÜRESİ */}
+                            <div className="flex flex-col justify-center items-center py-2 px-1 hover:bg-slate-50 transition-colors w-1/3">
+                                <span className="text-[9px] text-slate-600 font-[900] uppercase mb-1 tracking-widest border-b border-slate-200 w-[90%] text-center pb-0.5 leading-tight">ATAMA SÜRESİ</span>
+                                <div className="flex flex-col items-center justify-center h-full mt-1">
+                                    <span className="text-[16px] font-[950] text-[#ea580c] leading-none drop-shadow-sm">{(n.trendAtm != null && !isNaN(n.trendAtm)) ? n.trendAtm.toFixed(1) : "0.0"}</span>
+                                    <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">GENEL</span>
+                                </div>
+                            </div>
+
+                            {/* LEAD TIME */}
+                            <div className="flex flex-col justify-start items-center py-2 px-1 hover:bg-slate-50 transition-colors w-1/3">
+                                <span className="text-[9px] text-slate-600 font-[900] uppercase mb-1 tracking-widest border-b border-slate-200 w-[90%] text-center pb-0.5 leading-tight">LEAD TIME</span>
+                                <div className="flex flex-row items-center justify-center gap-2 w-full mt-1">
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-[16px] font-[950] text-[#ea580c] leading-none drop-shadow-sm">{(n.trendLt != null && !isNaN(n.trendLt)) ? n.trendLt.toFixed(1) : "0.0"}</span>
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">GENEL</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <input type="text" className="w-[40px] h-[22px] text-center font-bold text-[11px] border border-yellow-400 bg-yellow-50 rounded shadow-inner focus:outline-none transition-all" placeholder="Y.SAAT" value={n.trend?.dk30Lt !== undefined ? n.trend.dk30Lt : ''} onChange={(e) => onUpdateTrend(n.clean, 'dk30Lt', e.target.value)} />
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">Y.SAAT</span>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        {renderPctChange(calcPct(n.trend?.dk30Lt, n.trendLt))}
+                                        <span className="text-[7px] font-black uppercase text-slate-500 mt-0.5">DEĞİŞİM</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        const App = () => {
+            const [view, setView] = useState('upload');
+            const [search, setSearch] = useState('');
+            const [uploadError, setUploadError] = useState('');
+            
+            const [channelFilter, setChannelFilter] = useState('all'); // Tümü, Hemen, Yemek, 45DK
+            
+            const [showOfflineModal, setShowOfflineModal] = useState(false);
+            const [neighborModalConfig, setNeighborModalConfig] = useState(null);
+            const [storeDetailModalId, setStoreDetailModalId] = useState(null);
+
+            const [supportRoutingRows, setSupportRoutingRows] = useState([{ targetId: '', providerId: '', courierId: '' }]);
+            const [unsupportedStores, setUnsupportedStores] = useState(['']);
+
+            const [rawMaster, setRawMaster] = useState('');
+            const [rawPerf, setRawPerf] = useState('');
+            const [rawMessenger, setRawMessenger] = useState('');
+
+            const [storeList, setStoreList] = useState([]);
+            const [perfData, setPerfData] = useState([]);
+            const [messengerData, setMessengerData] = useState([]);
+            
+            const [top15Threshold, setTop15Threshold] = useState(10);
+            const [top15OphThreshold, setTop15OphThreshold] = useState(4.5);
+            const [top15ZoneManager, setTop15ZoneManager] = useState('all');
+            
+            const [supportAtamaThreshold, setSupportAtamaThreshold] = useState(10);
+            const [supportToplamaThreshold, setSupportToplamaThreshold] = useState(10);
+            const [supportOphThreshold, setSupportOphThreshold] = useState(4.5);
+            
+            const [selectedZoneManager, setSelectedZoneManager] = useState('all');
+            const [liveTrends, setLiveTrends] = useState({});
+            const [botStatus, setBotStatus] = useState({ active: false, remaining: 0, percent: 0, text: '' });
+            
+            const [botScanMode, setBotScanMode] = useState('all');
+            const [supportNeedFilter, setSupportNeedFilter] = useState('all');
+            
+            const [expandedOfflineStore, setExpandedOfflineStore] = useState(null);
+            
+            const neighborsCache = useRef({});
+            const pieChartRef = useRef(null);
+
+            useEffect(() => { neighborsCache.current = {}; }, [storeList, perfData]);
+
+            useEffect(() => {
+                const handleTrendData = (event) => {
+                    setLiveTrends(prev => {
+                        const newPayload = event.detail || {};
+                        let updated = false;
+                        for (let key in newPayload) {
+                            if (JSON.stringify(prev[key]) !== JSON.stringify(newPayload[key])) { updated = true; break; }
+                        }
+                        return updated ? {...prev, ...newPayload} : prev;
+                    });
+                };
+
+                const handleBotProgress = (event) => {
+                    setBotStatus(prev => {
+                        const { percent, remaining, store } = event.detail;
+                        if (prev.percent === percent && prev.remaining === remaining) return prev;
+                        if(remaining > 0) {
+                            return { active: true, remaining, percent, text: store ? `${store} taranıyor...` : 'Aranıyor...' };
+                        } else {
+                            setTimeout(() => setBotStatus(prev => prev.text !== 'Veriler Sıfırlandı!' ? { active: false, remaining: 0, percent: 0, text: '' } : prev), 4000);
+                            return { active: true, remaining: 0, percent: 100, text: 'Tamamlandı!' };
+                        }
+                    });
+                };
+
+                document.addEventListener('MIGPACK_TREND_DATA', handleTrendData);
+                document.addEventListener('BOT_PROGRESS', handleBotProgress);
+                
+                return () => {
+                    document.removeEventListener('MIGPACK_TREND_DATA', handleTrendData);
+                    document.removeEventListener('BOT_PROGRESS', handleBotProgress);
+                };
+            }, []);
+
+            const updateTrendGlobally = useCallback((storeCleanName, field, val) => {
+                setLiveTrends(prev => {
+                    const currentStoreTrends = prev[storeCleanName] || {};
+                    return { ...prev, [storeCleanName]: { ...currentStoreTrends, [field]: val === '' ? undefined : parseFloat(val) } };
+                });
+            }, []);
+
+            const getTrendForStore = useCallback((storeCleanName) => {
+                if (!storeCleanName || Object.keys(liveTrends).length === 0) return null;
+                const target = stripForMatch(storeCleanName);
+                if (!target) return null;
+                
+                const trendKey = Object.keys(liveTrends).find(k => stripForMatch(k) === target);
+                return trendKey ? liveTrends[trendKey] : null;
+            }, [liveTrends]);
+
+            const getSiparisByFilter = useCallback((s) => {
+                if (channelFilter === 'hemen') return s.hemenSiparis || 0;
+                if (channelFilter === 'yemek') return s.yemekSiparis || 0;
+                if (channelFilter === 'dk45') return s.dk45Siparis || 0;
+                return (s.hemenSiparis || 0) + (s.yemekSiparis || 0) + (s.dk45Siparis || 0);
+            }, [channelFilter]);
+
+            const processedData = useMemo(() => {
+                if (!perfData.length) return [];
+                return perfData.map(p => {
+                    const master = storeList.find(s => normalizeCode(s.code) === normalizeCode(p.region_id));
+                    return {
+                        ...p,
+                        region_id: p.region_id || "",
+                        clean: p.name || (master ? master.name : "BİLİNMİYOR"),
+                        lat: master ? master.lat : null,
+                        lon: master ? master.lon : null,
+                        city: master ? master.city : "BİLİNMİYOR",
+                        district: master ? master.district : "BİLİNMİYOR",
+                        matched: !!master
+                    };
+                }).sort((a, b) => (b.oph || 0) - (a.oph || 0));
+            }, [storeList, perfData]);
+
+            const zoneManagers = useMemo(() => {
+                const zms = processedData.map(p => p.zoneManager).filter(z => z && z !== "BİLİNMİYOR");
+                return Array.from(new Set(zms)).sort();
+            }, [processedData]);
+
+            const courierStats = useMemo(() => {
+                if (!messengerData.length) return [];
+                const groups = {};
+                messengerData.forEach(row => {
+                    let perf = null;
+                    const mKey = stripForMatch(row.store);
+                    if (!mKey) return;
+                    
+                    perf = processedData.find(p => stripForMatch(p.clean) === mKey);
+                    
+                    if (!perf) {
+                        const config = strategicCriticalConfig.find(c => (c.messengerAlias && stripForMatch(c.messengerAlias) === mKey));
+                        if (config) perf = processedData.find(p => normalizeCode(p.region_id) === normalizeCode(config.code));
+                    }
+                    const storeKey = perf ? stripForMatch(perf.clean) : mKey;
+                    
+                    if (!groups[storeKey]) {
+                        groups[storeKey] = { 
+                            rawStoreName: row.store, storeName: perf ? perf.clean : row.store, perf: perf,
+                            total: 0, offline: 0, kayip: 0, online: 0, mola: 0, couriers: [] 
+                        };
+                    }
+                    groups[storeKey].total++;
+                    groups[storeKey].couriers.push(row);
+                    const status = (row.status || "").toLowerCase();
+                    if (status.includes('offline')) groups[storeKey].offline++;
+                    else if (status.includes('kayıp') || status.includes('kayip')) groups[storeKey].kayip++;
+                    else if (status.includes('mola')) groups[storeKey].mola++;
+                    else groups[storeKey].online++;
+                });
+                return Object.values(groups);
+            }, [messengerData, processedData]);
+
+            const getStatsForStore = useCallback((s) => {
+                if (!s || !courierStats.length) return null;
+                const cleanS = stripForMatch(s.clean);
+                return courierStats.find(g => stripForMatch(g.storeName) === cleanS) || null;
+            }, [courierStats]);
+
+            const storesWithMetrics = useMemo(() => {
+                return processedData.map(s => {
+                    const trend = getTrendForStore(s.clean);
+                    const stats = getStatsForStore(s);
+                    const top = (s.hemenToplama && s.hemenToplama > 0) ? s.hemenToplama : ((trend && trend.toplama != null && !isNaN(trend.toplama)) ? trend.toplama : 0);
+                    const lt = (s.hemenLT && s.hemenLT > 0) ? s.hemenLT : ((trend && trend.lt != null && !isNaN(trend.lt)) ? trend.lt : 0);
+                    const atm = (s.hemenAtama && s.hemenAtama > 0) ? s.hemenAtama : (((trend && trend.lt != null && trend.toplama != null && !isNaN(trend.lt) && !isNaN(trend.toplama))) ? (trend.lt - trend.toplama) : 0);
+                    return { ...s, trend, stats, trendTop: top, trendLt: lt, trendAtm: atm };
+                });
+            }, [processedData, getTrendForStore, getStatsForStore]);
+
+            const findMatchedStore = useCallback((val) => {
+                if (!val) return null;
+                const nVal = normalizeCode(val);
+                const sVal = stripForMatch(val);
+                return storesWithMetrics.find(p => normalizeCode(p.region_id) === nVal || stripForMatch(p.clean) === sVal) ||
+                       storesWithMetrics.find(p => sVal.length > 2 && normalizeStr(p.clean).includes(normalizeStr(val)));
+            }, [storesWithMetrics]);
+
+            const getNeighborsForStore = useCallback((s, strictManual = false) => {
+                if (!s) return [];
+                const cacheKey = s.region_id + (strictManual ? '_strict' : '');
+                
+                if (neighborsCache.current[cacheKey]) {
+                    const cachedData = neighborsCache.current[cacheKey];
+                    return cachedData.map(c => {
+                        const store = storesWithMetrics.find(m => m.region_id === c.id);
+                        return store ? { ...store, distance: c.distance, isManual: c.isManual } : null;
+                    }).filter(Boolean);
+                }
+
+                let base = [];
+                const configMatch = strategicCriticalConfig.find(c => normalizeCode(c.code) === normalizeCode(s.region_id));
+                if (configMatch && configMatch.manualNeighbors) {
+                    configMatch.manualNeighbors.forEach(mName => {
+                        const searchM = stripForMatch(mName);
+                        const match = storesWithMetrics.find(p => {
+                            if (normalizeCode(p.region_id) === normalizeCode(mName) && mName.trim() !== '') return true;
+                            const cleanP = stripForMatch(p.clean);
+                            if (cleanP === searchM) return true;
+                            if (searchM.length > 3 && cleanP.includes(searchM)) {
+                                if (p.city && s.city && p.city !== s.city) return false;
+                                return true;
+                            }
+                            return false;
+                        });
+                        if (match && !base.some(b => b.region_id === match.region_id) && match.region_id !== s.region_id) {
+                            base.push({...match, distance: null, isManual: true});
+                        }
+                    });
+                }
+
+                if (strictManual) {
+                    const manualFiltered = base.filter(n => n.region_id !== s.region_id);
+                    neighborsCache.current[cacheKey] = manualFiltered.map(n => ({ id: n.region_id, distance: n.distance, isManual: n.isManual }));
+                    return manualFiltered;
+                }
+                
+                let distNeighbors = [];
+                let allDists = [];
+                if (s.lat && s.lon) {
+                    storesWithMetrics.forEach(p => {
+                        if (p.region_id === s.region_id || !p.lat || !p.lon) return;
+                        const dist = haversineDistance(s.lat, s.lon, p.lat, p.lon);
+                        if (dist !== null && !base.some(n => n.region_id === p.region_id)) {
+                            allDists.push({ ...p, distance: dist, isManual: false });
+                        }
+                    });
+                    
+                    allDists.sort((a, b) => a.distance - b.distance);
+                    distNeighbors = allDists.filter(n => n.distance <= 5.0);
+                    
+                    if (distNeighbors.length === 0 && allDists.length > 0) {
+                        const within6km = allDists.filter(n => n.distance <= 6.0);
+                        if (within6km.length > 0) {
+                            distNeighbors = within6km;
+                        }
+                    }
+                    
+                    if (distNeighbors.length < 2 && allDists.length >= 2) {
+                        if (allDists[1].distance <= 9.0) {
+                            distNeighbors = allDists.slice(0, 2);
+                        } else if (allDists[0].distance <= 9.0) {
+                            distNeighbors = allDists.slice(0, 1);
+                        }
+                    } else if (distNeighbors.length < 2 && allDists.length === 1) {
+                        if (allDists[0].distance <= 9.0) {
+                            distNeighbors = allDists.slice(0, 1);
+                        }
+                    }
+                }
+                
+                if (distNeighbors.length === 0 && s.district && s.district !== "BİLİNMİYOR") {
+                    storesWithMetrics.forEach(p => {
+                        if (p.region_id !== s.region_id && p.city === s.city && p.district === s.district) {
+                            if (!base.some(n => n.region_id === p.region_id)) {
+                                distNeighbors.push({ ...p, distance: null, isManual: false });
+                            }
+                        }
+                    });
+                }
+                
+                const finalNeighbors = [...base, ...distNeighbors];
+                const uniqueNeighbors = [];
+                const seenIds = new Set();
+                finalNeighbors.forEach(n => {
+                    if (!seenIds.has(n.region_id)) {
+                        seenIds.add(n.region_id);
+                        uniqueNeighbors.push(n);
+                    }
+                });
+
+                const isPureSanal = (name) => {
+                    const upper = name.toUpperCase();
+                    return upper.includes('SANAL') && !upper.includes('HEMEN') && !upper.includes('HAVUZ') && !upper.includes('+');
+                };
+
+                const criticalIds = strategicCriticalConfig.map(c => normalizeCode(c.code));
+                const result = uniqueNeighbors.filter(n => 
+                    n.region_id !== s.region_id &&
+                    (n.isManual || !isPureSanal(n.clean)) &&
+                    !(strictManual === false && criticalIds.includes(normalizeCode(s.region_id)) && criticalIds.includes(normalizeCode(n.region_id)))
+                );
+                
+                neighborsCache.current[cacheKey] = result.map(n => ({ id: n.region_id, distance: n.distance, isManual: n.isManual }));
+                return result;
+            }, [storesWithMetrics]);
+
+            const isNeedy = useCallback((s, atamaThresh, toplamaThresh, ophThresh) => {
+                return getSiparisByFilter(s) > 0 && s.trendAtm > atamaThresh && s.trendTop < toplamaThresh && (s.oph || 0) >= ophThresh;
+            }, [getSiparisByFilter]);
+
+            const needyStores = useMemo(() => storesWithMetrics.filter(s => {
+                if (selectedZoneManager !== 'all' && s.zoneManager !== selectedZoneManager) return false;
+                return isNeedy(s, supportAtamaThreshold, supportToplamaThreshold, supportOphThreshold);
+            }), [storesWithMetrics, selectedZoneManager, supportAtamaThreshold, supportToplamaThreshold, supportOphThreshold, isNeedy]);
+
+            const filteredNeedyStores = useMemo(() => needyStores.filter(s => {
+                if (supportNeedFilter === 'all') return true;
+                if (supportNeedFilter === 'last30Min') {
+                    const isFixedRecently = (s.trend?.dk30Top !== undefined && s.trend?.dk30Top < supportToplamaThreshold) || 
+                                            (s.trend?.dk30Lt !== undefined && s.trend?.dk30Lt < 30);
+                    if (isFixedRecently) return false;
+                }
+                if (supportNeedFilter === 'hasSupport') {
+                    const neighbors = getNeighborsForStore(s, false);
+                    const helpers = neighbors.filter(n => Math.abs((n.trendLt || 0) - (n.trendTop || 0)) <= 18 && (n.stats?.online >= 5));
+                    return helpers.length > 0;
+                }
+                return true;
+            }).sort((a,b) => (b.trendLt || 0) - (a.trendLt || 0)), [needyStores, supportNeedFilter, getNeighborsForStore, supportToplamaThreshold]);
+
+            const top15List = useMemo(() => {
+                let result = storesWithMetrics.filter(s => {
+                    if (top15ZoneManager !== 'all' && s.zoneManager !== top15ZoneManager) return false;
+                    return getSiparisByFilter(s) > 0 && (s.trendTop || 0) > 0 && (s.trendTop || 0) < top15Threshold && (s.oph || 0) >= top15OphThreshold;
+                });
+                result = result.sort((a,b) => {
+                    if (channelFilter === 'yemek') return (b.yemekLT || 0) - (a.yemekLT || 0);
+                    if (channelFilter === 'dk45') return (b.dk45LT || 0) - (a.dk45LT || 0);
+                    return (b.trendLt || 0) - (a.trendLt || 0);
+                });
+                return top15ZoneManager === 'all' ? result.slice(0, 15) : result;
+            }, [storesWithMetrics, top15Threshold, top15OphThreshold, top15ZoneManager, channelFilter, getSiparisByFilter]);
+            
+            const criticalStoresList = useMemo(() => strategicCriticalConfig.map(conf => storesWithMetrics.find(p => normalizeCode(p.region_id) === normalizeCode(conf.code))).filter(Boolean), [storesWithMetrics]);
+
+            const searchList = useMemo(() => search ? storesWithMetrics.filter(s => normalizeStr(s.clean).includes(normalizeStr(search)) || (s.region_id || "").includes(search)).slice(0, 50) : [], [search, storesWithMetrics]);
+
+            const analytics = useMemo(() => {
+                if (!storesWithMetrics.length) return null;
+                const topOPH = [...storesWithMetrics].sort((a, b) => (b.oph || 0) - (a.oph || 0)).slice(0, 15);
+                const bottomOPH = [...storesWithMetrics].filter(s => getSiparisByFilter(s) > 0).sort((a, b) => (a.oph || 0) - (b.oph || 0)).slice(0, 15);
+                const topLT = [...storesWithMetrics].filter(s => getSiparisByFilter(s) > 0).sort((a, b) => (b.trendLt || 0) - (a.trendLt || 0)).slice(0, 15);
+                const avgOPH = storesWithMetrics.reduce((a, b) => a + (b.oph || 0), 0) / (storesWithMetrics.length || 1);
+                const avgLT = storesWithMetrics.reduce((a, b) => a + (b.trendLt || 0), 0) / (storesWithMetrics.length || 1);
+                const avgToplama = storesWithMetrics.reduce((a, b) => a + (b.trendTop || 0), 0) / (storesWithMetrics.filter(x => (x.trendTop || 0) > 0).length || 1);
+                const avgAtama = storesWithMetrics.reduce((a, b) => a + (b.trendAtm || 0), 0) / (storesWithMetrics.filter(x => (x.trendTop || 0) > 0).length || 1);
+                return { topOPH, bottomOPH, topLT, avgOPH, avgLT, avgToplama, avgAtama };
+            }, [storesWithMetrics, getSiparisByFilter]);
+
+            const activeDetailStore = useMemo(() => {
+                if (!storeDetailModalId) return null;
+                return storesWithMetrics.find(s => s.region_id === storeDetailModalId) || null;
+            }, [storeDetailModalId, storesWithMetrics]);
+
+            const activeNeighborModalStore = useMemo(() => {
+                if (!neighborModalConfig) return null;
+                return storesWithMetrics.find(s => s.region_id === neighborModalConfig.storeId) || null;
+            }, [neighborModalConfig, storesWithMetrics]);
+
+            const activeNeighborModalList = useMemo(() => {
+                if (!activeNeighborModalStore || !neighborModalConfig) return [];
+                let neighborsList = getNeighborsForStore(activeNeighborModalStore, neighborModalConfig.strictManual);
+                let type = neighborModalConfig.type;
+                let processed = neighborsList;
+                return processed.sort((a, b) => {
+                    const aDist = a.distance != null ? a.distance : 999;
+                    const bDist = b.distance != null ? b.distance : 999;
+                    return aDist - bDist;
+                });
+            }, [activeNeighborModalStore, neighborModalConfig, getNeighborsForStore]);
+
+            useEffect(() => {
+                if (view !== 'dashboard' || !analytics || courierStats.length === 0) return;
+                const t = courierStats.reduce((a, c) => ({ on: a.on+c.online, off: a.off+c.offline, kyp: a.kyp+c.kayip, mla: a.mla+c.mola }), { on: 0, off: 0, kyp: 0, mla: 0 });
+                const ctx = document.getElementById('courierStatusChart');
+                if (ctx) {
+                    if (pieChartRef.current) pieChartRef.current.destroy();
+                    pieChartRef.current = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Online', 'Offline', 'Kayıp', 'Mola'],
+                            datasets: [{
+                                data: [t.on, t.off, t.kyp, t.mla],
+                                backgroundColor: ['#22c55e', '#ef4444', '#64748b', '#f59e0b'],
+                                borderWidth: 0,
+                            }]
+                        },
+                        options: { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+                    });
+                }
+                return () => { if (pieChartRef.current) pieChartRef.current.destroy(); }
+            }, [view, analytics, courierStats]);
+
+            const copyToClipboard = useCallback((text) => {
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            }, []);
+
+            const handleCopySupport = useCallback((e, storeObj, defaultHelper = null) => {
+                e.stopPropagation();
+                const offCouriers = storeObj.stats?.couriers?.filter(c => (c.status || "").toLowerCase().includes('off') || (c.status || "").toLowerCase().includes('kay')) || [];
+                
+                const dTop = (storeObj.hemenToplama && storeObj.hemenToplama > 0) ? storeObj.hemenToplama : ((storeObj.trend && storeObj.trend.toplama != null && !isNaN(storeObj.trend.toplama)) ? storeObj.trend.toplama : 0);
+                const currentToplama = (storeObj.trendTop != null && !isNaN(storeObj.trendTop)) ? storeObj.trendTop : dTop;
+                
+                let text = "";
+                
+                if (currentToplama > 10) {
+                    text = `([${storeObj.region_id}] ${storeObj.clean} Mağazası toplamadan patlak durumdadır, acil destek!)\n`;
+                } else {
+                    let targetName = defaultHelper ? defaultHelper : "ÇEVREDE UYGUN MAĞAZA BULUNAMADI";
+                    let helperText = targetName === "ÇEVREDE UYGUN MAĞAZA BULUNAMADI" ? targetName : getAblative(targetName);
+                    text = `([${storeObj.region_id}] ${storeObj.clean} Mağazasına, ${helperText} destek rica ederiz.)\n`;
+                }
+
+                if (offCouriers.length > 0 && defaultHelper === null) {
+                    text += "\nEksik Kuryeler:\n";
+                    offCouriers.forEach(c => { text += `- ${c.courierName} (${c.status})\n`; });
+                }
+
+                copyToClipboard(text);
+                const btn = e.currentTarget;
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `<span style="font-size:10px; font-weight:900;">✓</span>`;
+                btn.classList.add('bg-green-100', 'text-green-700', 'border-green-300');
+                setTimeout(() => { btn.innerHTML = originalHTML; btn.classList.remove('bg-green-100', 'text-green-700', 'border-green-300'); }, 1500);
+            }, [copyToClipboard]);
+
+            const copyExcelOfflineList = () => {
+                const lines = [];
+                courierStats.forEach(g => {
+                    const storeCode = g.perf?.region_id || g.regionId || "BİLİNMİYOR";
+                    g.couriers.filter(c => (c.status || "").toLowerCase().includes('off') || (c.status || "").toLowerCase().includes('kay')).forEach(c => {
+                        lines.push(`${storeCode}\t${g.storeName}\t${c.userId}\t${c.courierName}\t${c.status}`);
+                    });
+                });
+                copyToClipboard("Mağaza Kodu\tMağaza Adı\tKurye ID\tKurye Adı\tDurum\n" + lines.join('\n'));
+            };
+
+            const toggleAutoBot = () => {
+                if (botStatus.active) {
+                    setBotStatus({ active: false, remaining: 0, percent: 0, text: 'Durduruldu' });
+                    try { document.dispatchEvent(new CustomEvent('STOP_BOT')); } catch(e) {}
+                    return;
+                }
+                
+                if (!storesWithMetrics.length) {
+                    setBotStatus({ active: false, remaining: 0, percent: 0, text: 'HATA: Veri Yok!' });
+                    setTimeout(() => setBotStatus(prev => ({...prev, text: ''})), 3000);
+                    return;
+                }
+
+                const queue = [];
+                const added = new Set();
+                const addStoreAndNeighbors = (storeObj) => {
+                    if (!storeObj) return;
+                    if (botScanMode === 'all' || botScanMode === 'main') {
+                        if (!added.has(storeObj.clean)) { queue.push(storeObj.clean); added.add(storeObj.clean); }
+                    }
+                    if (botScanMode === 'all' || botScanMode === 'neighbors') {
+                        getNeighborsForStore(storeObj, view === 'critical').forEach(n => {
+                            if (n && n.clean && !added.has(n.clean)) { queue.push(n.clean); added.add(n.clean); }
+                        });
+                    }
+                };
+
+                let currentList = [];
+                if (view === 'critical') currentList = criticalStoresList;
+                else if (view === 'top15') currentList = top15List;
+                else if (view === 'support') currentList = needyStores;
+                else if (search) currentList = searchList;
+                else currentList = storesWithMetrics.slice(0, 50);
+
+                currentList.forEach(addStoreAndNeighbors);
+
+                if (queue.length === 0) {
+                    setBotStatus({ active: false, remaining: 0, percent: 0, text: 'HATA: Hedef Yok!' });
+                    setTimeout(() => setBotStatus(prev => ({...prev, text: ''})), 3000);
+                    return;
+                }
+
+                setBotStatus({ active: true, remaining: queue.length, percent: 0, text: "Bot Başlatılıyor..." });
+                try { document.dispatchEvent(new CustomEvent('START_BOT', { detail: queue })); } catch(e) {}
+            };
+
+            const handleShowNeighborsModal = useCallback((store, neighborsList, type) => {
+                setNeighborModalConfig({ storeId: store.region_id, type: type, strictManual: view === 'critical' });
+            }, [view]);
+
+            const ColumnHeader = () => (
+                <div className="mb-4 px-4 alignment-grid hidden lg:grid">
+                    <div className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center flex items-center justify-center">MAĞAZA BİLGİSİ</div>
+                    <div className="header-pill bg-orange-50 text-orange-600 border-orange-200">HEMEN KANALI</div>
+                    <div className="header-pill bg-red-50 text-red-600 border-red-200">YEMEK KANALI</div>
+                    <div className="header-pill bg-blue-50 text-blue-600 border-blue-200">45DK KANALI</div>
+                </div>
+            );
+
+            const AnalyticsStoreItem = ({ s, variant, index, onClick }) => {
+                const opacity = 1 - (index * 0.05);
+                const bgColor = variant === 'green' ? `rgba(254, 226, 226, ${opacity})` : variant === 'red' ? `rgba(220, 252, 231, ${opacity})` : `rgba(224, 242, 254, ${opacity})`;
+                const toplamaCritical = (s.trendTop || 0) > 10;
+                const atamaWarning = (s.trendAtm || 0) > (s.trendTop || 0) && (s.trendTop || 0) > 0;
+                const totalCouriers = s.stats ? s.stats.total : 0;
+                const metricLabel = variant === 'blue' ? 'LT' : 'OPH';
+
+                return (
+                    <div onClick={() => onClick && onClick(s)} className={`relative p-3 border border-slate-200 rounded-[20px] flex flex-col xl:flex-row items-center gap-4 cursor-pointer hover:border-blue-400 hover:shadow-md transition-all shadow-sm ring-1 ring-slate-50`} style={{ backgroundColor: bgColor }}>
+                        <div className={`value-box-analytics flex-col flex-shrink-0 ${variant === 'green' ? 'text-red-700 border-red-300' : variant === 'red' ? 'text-emerald-700 border-emerald-300' : 'text-blue-700 border-blue-300'}`}>
+                            <span className="text-[10px] font-black uppercase tracking-[0.1em] mb-[-2px] leading-none opacity-60">{metricLabel}</span>
+                            <span className="text-[26px] font-[950] tracking-tighter leading-tight drop-shadow-sm">{variant === 'blue' ? (s.trendLt || 0).toFixed(1) : (s.oph || 0).toFixed(2)}</span>
+                            <div className="mt-1 px-2 py-0.5 bg-white/95 rounded border border-slate-200/50 shadow-sm">
+                                <span className="text-[10px] text-slate-900 font-black uppercase leading-none whitespace-nowrap">{totalCouriers} KURYE</span>
+                            </div>
+                        </div>
+                        <div className="flex-1 min-w-0 w-full flex flex-col">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full mb-2 gap-2">
+                                <div className="font-black text-lg text-slate-900 uppercase truncate leading-tight w-full" title={s.clean}>
+                                    {s.clean}
+                                </div>
+                                {variant !== 'blue' && (
+                                    <div className="bg-purple-100 text-purple-800 border-2 border-purple-200 px-2 py-0.5 rounded-lg font-black text-[10px] uppercase italic shrink-0">
+                                        SNF: {s.hemenReasonSnf || "-"}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="analytics-data-row">
+                                <div className="analytics-data-item bg-slate-50">
+                                    <span className="analytics-label">SİPARİŞ</span>
+                                    <span className="analytics-value text-slate-700">{s.hemenSiparis || 0}</span>
+                                </div>
+                                <div className={`analytics-data-item ${toplamaCritical ? 'bg-red-500 border-red-600' : 'bg-orange-50'}`}>
+                                    <span className={`analytics-label ${toplamaCritical ? 'text-white' : 'text-orange-600'}`}>TOP</span>
+                                    <div className="flex flex-col items-center justify-center mt-1">
+                                        <span className={`analytics-value ${toplamaCritical ? 'text-white' : 'text-orange-700'}`}>{(s.trendTop || 0).toFixed(1)}</span>
+                                    </div>
+                                </div>
+                                <div className={`analytics-data-item ${atamaWarning ? 'bg-amber-500 border-amber-600' : 'bg-amber-50'}`}>
+                                    <span className={`analytics-label ${atamaWarning ? 'text-white' : 'text-amber-600'}`}>ATM</span>
+                                    <span className={`analytics-value ${atamaWarning ? 'text-white' : 'text-amber-700'}`}>{(s.trendAtm || 0).toFixed(1)}</span>
+                                </div>
+                                <div className="analytics-data-item bg-blue-50">
+                                    <span className="analytics-label text-blue-600">LT</span>
+                                    <div className="flex flex-col items-center justify-center mt-1">
+                                        <span className="analytics-value text-blue-700">{(s.trendLt || 0).toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            const handleAnalyze = () => {
+                if (!rawMaster.trim() || !rawPerf.trim() || !rawMessenger.trim()) {
+                    setUploadError("⚠️ DİKKAT: Lütfen tüm alanlara Excel verilerinizi yapıştırın.");
+                    return;
+                }
+                setUploadError('');
+
+                try {
+                    const processCSV = (text) => {
+                        if (!text) return [];
+                        const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                        if (lines.length < 2) return [];
+                        const delimiter = lines[0].includes('\t') ? '\t' : (lines[0].includes(';') ? ';' : ',');
+                        const rawHeaders = lines[0].split(delimiter);
+                        const headers = rawHeaders.map(h => normalizeStr(h).replace(/[\s_]/g, ''));
+                        return lines.slice(1).map(line => {
+                            const cols = line.split(delimiter);
+                            const obj = {};
+                            headers.forEach((h, i) => { obj[h] = cols[i] !== undefined ? cols[i].trim() : ''; });
+                            return obj;
+                        });
+                    };
+
+                    const parseCoord = (val) => {
+                        if (!val) return null;
+                        let str = val.toString().trim().replace(',', '.'); 
+                        let parsed = parseFloat(str);
+                        return isNaN(parsed) ? null : parsed;
+                    };
+                    
+                    const masterData = processCSV(rawMaster);
+                    const perfParsed = processCSV(rawPerf);
+                    const messParsed = processCSV(rawMessenger);
+
+                    if (masterData.length === 0 || perfParsed.length === 0 || messParsed.length === 0) {
+                        setUploadError("HATA: Yapıştırdığınız veriler eksik veya hatalı formatta.");
+                        return;
+                    }
+
+                    setStoreList(masterData.map(d => ({ 
+                        code: d['MAGAZAKODU'] || d['REGIONID'] || "", 
+                        name: d['MAGAZAADI'] || d['NAME'] || "", 
+                        city: normalizeStr(d['IL'] || d['CITY']), 
+                        district: normalizeStr(d['ILCE'] || d['DISTRICT']), 
+                        lat: parseCoord(d['ENLEM'] || d['LAT'] || d['LATITUDE']), 
+                        lon: parseCoord(d['BOYLAM'] || d['LON'] || d['LNG'] || d['LONGITUDE']) 
+                    })));
+                    
+                    setPerfData(perfParsed.map(d => ({
+                        region_id: (d['REGIONID'] || d['MAGAZAKODU'] || "").toString(),
+                        name: (d['NAME'] || d['MAGAZAADI'] || "").toString(),
+                        zoneManager: (d['ZONEMANAGER'] || d['BOLGEMUDURU'] || "BİLİNMİYOR").toString(),
+                        totalSiparis: parseCoord(d['TOPLAMSIPARISSAYISI'] || d['TOPLAMSIPARIS'] || d['SIPARIS']),
+                        hemenSiparis: parseCoord(d['HEMENSIPARISSAYISI'] || d['HEMENSIPARIS'] || d['HEMENSIPARISSAYISI'] || d['HEMENSIPARIS']),
+                        yemekSiparis: parseCoord(d['YEMEKSIPARISSAYISI'] || d['YEMEKSIPARIS'] || d['YEMEKSIPARISSAYISI']),
+                        dk45Siparis: parseCoord(d['45DKSIPARISSAYISI'] || d['45DKSIPARIS'] || d['45DKSIPARISSAYISI']),
+                        hemenLT: parseCoord(d['HEMENLEADTIME'] || d['HEMENLT']),
+                        yemekLT: parseCoord(d['YEMEKLEADTIME'] || d['YEMEKLT']),
+                        dk45LT: parseCoord(d['45DKLEADTIME'] || d['45DKLT']),
+                        hemenToplama: parseCoord(d['HEMENTOPLAMASURESI'] || d['HEMENTOPLAMA']),
+                        dk45Toplama: parseCoord(d['45DKTOPLAMASURESI'] || d['45DKTOPLAMA']),
+                        hemenAtama: parseCoord(d['HEMENATAMABEKLEMESURESI'] || d['HEMENATAMASURESI'] || d['HEMENATAMA']),
+                        yemekAtama: parseCoord(d['YEMEKATAMABEKLEMESURESI'] || d['YEMEKATAMASURESI'] || d['YEMEKATAMA']),
+                        dk45Atama: parseCoord(d['45DKATAMABEKLEMESURESI'] || d['45DKATAMASURESI'] || d['45DKATAMA']),
+                        oph: parseCoord(d['OPH2'] || d['OPH']),
+                        hemenReasonSnf: (d['HEMENREASONSNF'] || d['REASONSNF'] || d['HEMENSNF'] || d['SNF'] || d['HEMENREASON'] || "-").toString().trim()
+                    })));
+
+                    setMessengerData(messParsed.map(d => ({ 
+                        userId: d['USERID'], store: d['BOLGE'] || d['MAGAZA'] || d['STORE'], courierName: d['KURYEADI'] || d['COURIERNAME'], status: d['STATU'] || d['KURYEDURUMU'] || d['STATUS'] || d['DURUM']
+                    })));
+
+                    if (perfParsed.some(d => d['REGIONID'] || d['MAGAZAKODU'])) setView('dashboard');
+                    else setUploadError("HATA: Excel başlıkları eşleşmedi. Lütfen verilerin doğruluğundan emin olun.");
+                } catch(err) {
+                    setUploadError("Veri ayrıştırma hatası! Lütfen kopyaladığınız Excel formatından emin olun.");
+                }
+            };
+
+            const renderView = () => {
+                if (view === 'upload') {
+                    return (
+                        <div className="animate-in w-full max-w-7xl px-4 mx-auto mt-6">
+                            {uploadError && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-center font-bold">{uploadError}</div>}
+                            <div className="grid md:grid-cols-3 gap-4">
+                                <div className="flex flex-col gap-1"><label className="text-center font-black text-slate-700 uppercase tracking-widest text-[13px]">İL İLÇE</label><textarea className="h-[500px] p-4 border-2 border-slate-200 rounded-xl outline-none focus:border-blue-500 font-mono text-[10px] w-full resize-none shadow-sm" value={rawMaster} onChange={e => setRawMaster(e.target.value)} placeholder="Master Liste Verilerini Yapıştırın... (Excel/CSV)" /></div>
+                                <div className="flex flex-col gap-1"><label className="text-center font-black text-slate-700 uppercase tracking-widest text-[13px]">PERFORMANS ANALİZİ - BÖLGE KPI</label><textarea className="h-[500px] p-4 border-2 border-slate-200 rounded-xl outline-none focus:border-blue-500 font-mono text-[10px] w-full resize-none shadow-sm" value={rawPerf} onChange={e => setRawPerf(e.target.value)} placeholder="Performans Verilerini Yapıştırın... (Excel/CSV)" /></div>
+                                <div className="flex flex-col gap-1"><label className="text-center font-black text-slate-700 uppercase tracking-widest text-[13px]">KURYE ANALİZİ</label><textarea className="h-[500px] p-4 border-2 border-slate-200 rounded-xl outline-none focus:border-blue-500 font-mono text-[10px] w-full resize-none shadow-sm" value={rawMessenger} onChange={e => setRawMessenger(e.target.value)} placeholder="Messenger Offline Verilerini Yapıştırın... (Excel/CSV)" /></div>
+                            </div>
+                            <button onClick={handleAnalyze} className="w-full mt-4 py-5 bg-[#0f172a] text-white text-2xl font-black rounded-xl hover:bg-slate-800 transition-all shadow-xl uppercase italic tracking-tighter cursor-pointer">SİSTEMİ BAŞLAT</button>
+                        </div>
+                    );
+                }
+
+                if (storesWithMetrics.length === 0) {
+                    return (
+                        <div className="flex flex-col items-center justify-center p-20 animate-in text-center max-w-7xl mx-auto"><h2 className="text-2xl font-black text-slate-400 uppercase italic">Eşleşen Veri Bulunamadı</h2><button onClick={() => setView('upload')} className="mt-6 px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-all">GERİ DÖN</button></div>
+                    );
+                }
+
+                return (
+                    <Fragment>
+                        {/* DASHBOARD */}
+                        <div style={{ display: view === 'dashboard' ? 'block' : 'none' }}>
+                            <div className="space-y-4 animate-in w-full px-2 lg:px-4 mx-auto max-w-[1920px]">
+                                <div className="bg-white p-4 rounded-[16px] border border-slate-200 shadow-sm flex items-center ring-1 ring-orange-50">
+                                    <input type="text" placeholder="Bölge veya Mağaza ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full h-full bg-transparent outline-none font-black text-xl text-slate-900 italic tracking-tighter" />
+                                </div>
+                                {!search && analytics && (
+                                    <Fragment>
+                                        <div className="flex flex-col xl:flex-row justify-center items-center gap-4 w-full">
+                                            <div className="bg-[#0f172a] text-white p-6 rounded-[24px] shadow-lg border-b-4 border-orange-600 flex flex-col items-center justify-center w-full xl:w-5/12">
+                                                <h3 className="text-xl font-black italic uppercase mb-6 border-b-2 border-orange-600 pb-1 inline-block tracking-tighter text-center">SİSTEM GENELİ</h3>
+                                                <div className="grid grid-cols-2 gap-4 w-full max-w-[360px]">
+                                                    <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10"><p className="text-[10px] opacity-60 uppercase font-black mb-1 tracking-widest">ORT OPH</p><div className="text-2xl font-black">{analytics.avgOPH.toFixed(2)}</div></div>
+                                                    <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10"><p className="text-[10px] opacity-60 uppercase font-black mb-1 tracking-widest">ORT LT</p><div className="text-2xl font-black">{analytics.avgLT.toFixed(1)}</div></div>
+                                                    <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10"><p className="text-[10px] opacity-60 uppercase font-black mb-1 tracking-widest">TOPLAMA</p><div className="text-2xl font-black text-orange-500">{analytics.avgToplama.toFixed(1)}</div></div>
+                                                    <div className="text-center p-4 bg-white/5 rounded-xl border border-white/10"><p className="text-[10px] opacity-60 uppercase font-black mb-1 tracking-widest">ATAMA</p><div className="text-2xl font-black text-blue-400">{analytics.avgAtama.toFixed(1)}</div></div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-white rounded-[24px] border border-slate-200 flex flex-col md:flex-row items-center justify-center p-6 shadow-lg gap-6 w-full xl:w-7/12">
+                                                <div className="relative w-32 h-32 flex-shrink-0">
+                                                    <canvas id="courierStatusChart"></canvas>
+                                                </div>
+                                                <div className="flex-1 grid grid-cols-2 gap-3 w-full max-w-[460px]">
+                                                    {courierStats.length > 0 && (() => {
+                                                        const t = courierStats.reduce((a, c) => ({ on: a.on+c.online, off: a.off+c.offline, kyp: a.kyp+c.kayip, mla: a.mla+c.mola }), { on: 0, off: 0, kyp: 0, mla: 0 });
+                                                        return (
+                                                            <Fragment>
+                                                                <div className="p-3 bg-[#f0fdf4] rounded-[12px] border border-[#bbf7d0] flex flex-col items-center justify-center shadow-sm">
+                                                                    <p className="text-[10px] font-black text-[#166534] uppercase tracking-widest mb-1">ONLINE</p>
+                                                                    <p className="text-[24px] font-black text-[#14532d] leading-none">{t.on}</p>
+                                                                </div>
+                                                                <div className="bg-[#fef2f2] rounded-[12px] border border-[#fecaca] shadow-sm flex flex-col items-center justify-center px-2 py-2 cursor-pointer hover:bg-[#fee2e2] transition-colors" onClick={() => setShowOfflineModal(true)}>
+                                                                    <p className="text-[10px] font-black text-[#b91c1c] uppercase tracking-widest mb-1">OFFLINE & KAYIP</p>
+                                                                    <p className="text-[24px] font-black text-[#7f1d1d] leading-none mb-1">{t.off + t.kyp}</p>
+                                                                    <div className="bg-[#dc2626] w-full max-w-[80px] text-white text-[9px] py-0.5 rounded-full text-center font-black italic tracking-widest shadow-inner">DETAY</div>
+                                                                </div>
+                                                                <div className="p-3 bg-[#f8fafc] rounded-[12px] border border-[#e2e8f0] flex flex-col items-center justify-center shadow-sm">
+                                                                    <p className="text-[10px] font-black text-[#475569] uppercase tracking-widest mb-1">KAYIP</p>
+                                                                    <p className="text-[24px] font-black text-[#1e293b] leading-none">{t.kyp}</p>
+                                                                </div>
+                                                                <div className="p-3 bg-[#fffbeb] rounded-[12px] border border-[#fde68a] flex flex-col items-center justify-center shadow-sm">
+                                                                    <p className="text-[10px] font-black text-[#b45309] uppercase tracking-widest mb-1">MOLA</p>
+                                                                    <p className="text-[24px] font-black text-[#78350f] leading-none">{t.mla}</p>
+                                                                </div>
+                                                            </Fragment>
+                                                        );
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                                            <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-md">
+                                                <h3 className="analytics-title font-black text-slate-900 !text-xl italic mb-4 border-l-8 border-emerald-500 pl-3 tracking-tighter uppercase">ZİRVE OPH (İLK 15)</h3>
+                                                <div className="space-y-3">
+                                                    {analytics.topOPH.map((s, i) => <AnalyticsStoreItem key={i} s={s} variant="green" index={i} onClick={(store) => setStoreDetailModalId(store.region_id)} />)}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-md">
+                                                <h3 className="analytics-title font-black text-slate-900 !text-xl italic mb-4 border-l-8 border-red-500 pl-3 tracking-tighter uppercase">DÜŞÜK OPH (SON 15)</h3>
+                                                <div className="space-y-3">
+                                                    {analytics.bottomOPH.map((s, i) => <AnalyticsStoreItem key={i} s={s} variant="red" index={i} onClick={(store) => setStoreDetailModalId(store.region_id)} />)}
+                                                </div>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-[24px] border border-slate-200 shadow-md">
+                                                <h3 className="analytics-title font-black text-slate-900 !text-xl italic mb-4 border-l-8 border-blue-500 pl-3 tracking-tighter uppercase">EN HIZLI MAĞAZALAR (LT)</h3>
+                                                <div className="space-y-3">
+                                                    {analytics.topLT.map((s, i) => <AnalyticsStoreItem key={i} s={s} variant="blue" index={i} onClick={(store) => setStoreDetailModalId(store.region_id)} />)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Fragment>
+                                )}
+                                {search && (
+                                    <div className="space-y-3">
+                                        <ColumnHeader />
+                                        <div className="grid grid-cols-1 gap-2">
+                                            {searchList.map((s) => <GridCardComp key={s.region_id} s={s} stats={s.stats} trend={s.trend} neighbors={getNeighborsForStore(s, false)} isNeighborCard={false} onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />)}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* DESTEK VE YÖNLENDİRME */}
+                        <div style={{ display: view === 'support' ? 'block' : 'none' }}>
+                            <div className="space-y-4 animate-in w-full px-2 lg:px-4 mx-auto max-w-[1920px]">
+                                <div className="bg-[#0f2e21] border-emerald-600 shadow-md rounded-[16px] px-4 py-3 flex flex-col xl:flex-row justify-between items-center gap-3">
+                                    <h2 className="text-xl font-black italic uppercase text-white tracking-tighter text-left whitespace-nowrap">DESTEK VE YÖNLENDİRME MERKEZİ</h2>
+                                    <div className="flex flex-nowrap items-center justify-start xl:justify-end gap-2 w-full overflow-x-auto pb-1 custom-scrollbar hide-scroll">
+                                        <div className="flex items-center gap-1.5 bg-[#064e3b] p-1.5 rounded-lg border border-emerald-700 shrink-0">
+                                            <span className="text-[9px] font-black text-emerald-200 uppercase tracking-widest pl-1">BÖLGE MÜDÜRÜ:</span>
+                                            <select className="bg-emerald-800 text-white border border-emerald-600 font-black rounded-md px-2 py-1 outline-none text-xs cursor-pointer shadow-sm" value={selectedZoneManager} onChange={(e) => setSelectedZoneManager(e.target.value)}>
+                                                <option value="all">TÜM BÖLGE MÜDÜRLERİ</option>
+                                                {zoneManagers.map(zm => <option key={zm} value={zm}>{zm}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-[#064e3b] p-1.5 rounded-lg border border-emerald-700 shrink-0">
+                                            <span className="text-[9px] font-black text-emerald-200 uppercase tracking-widest pl-1">ATAMA &gt;</span>
+                                            <input type="number" value={supportAtamaThreshold} onChange={(e) => setSupportAtamaThreshold(Number(e.target.value) || 0)} className="w-10 h-6 text-center rounded bg-white text-emerald-900 font-black outline-none text-xs" />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-[#064e3b] p-1.5 rounded-lg border border-emerald-700 shrink-0">
+                                            <span className="text-[9px] font-black text-emerald-200 uppercase tracking-widest pl-1">TOPLAMA &lt;</span>
+                                            <input type="number" value={supportToplamaThreshold} onChange={(e) => setSupportToplamaThreshold(Number(e.target.value) || 0)} className="w-10 h-6 text-center rounded bg-white text-emerald-900 font-black outline-none text-xs" />
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-[#064e3b] p-1.5 rounded-lg border border-emerald-700 pr-1.5 shrink-0">
+                                            <span className="text-[9px] font-black text-emerald-200 uppercase tracking-widest pl-1">OPH &gt;=</span>
+                                            <input type="number" step="0.1" value={supportOphThreshold} onChange={(e) => setSupportOphThreshold(Number(e.target.value) || 0)} className="w-12 h-6 text-center rounded bg-white text-emerald-900 font-black outline-none text-xs" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="w-full">
+                                    <div className="bg-white p-5 rounded-[20px] border border-slate-200 shadow-md">
+                                        <h3 className="text-xl font-black text-slate-800 uppercase italic mb-1 border-l-8 border-red-500 pl-3">DESTEK BEKLEYEN MAĞAZALAR</h3>
+                                        <p className="text-[9px] font-black text-slate-400 mb-4 uppercase tracking-widest pl-5">{channelFilter.toUpperCase()} Atama &gt; {supportAtamaThreshold} DK | Toplama &lt; {supportToplamaThreshold} DK | OPH &gt;= {supportOphThreshold}</p>
+                                        
+                                        <div className="grid grid-cols-1 gap-3 max-h-[850px] overflow-y-auto pr-2">
+                                            {filteredNeedyStores.map((s) => <HorizontalCardComp key={s.region_id} s={s} stats={s.stats} trend={s.trend} neighbors={getNeighborsForStore(s, false)} type="needy" onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />)}
+                                            {filteredNeedyStores.length === 0 && <div className="bg-white p-10 rounded-[16px] border-2 border-dashed border-slate-200 text-center shadow-sm col-span-full"><p className="text-lg font-black text-slate-400 uppercase italic">Kriterlere uygun mağaza bulunamadı.</p></div>}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* KRİTİK */}
+                        <div style={{ display: view === 'critical' ? 'block' : 'none' }}>
+                            <div className="space-y-4 animate-in w-full px-2 lg:px-4 mx-auto max-w-[1920px]">
+                                <ColumnHeader />
+                                <div className="grid grid-cols-1 gap-2">
+                                    {criticalStoresList.map((s) => <GridCardComp key={s.region_id} s={s} stats={s.stats} trend={s.trend} neighbors={getNeighborsForStore(s, true)} isNeighborCard={false} onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />)}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* TOP15 */}
+                        <div style={{ display: view === 'top15' ? 'block' : 'none' }}>
+                            <div className="space-y-4 animate-in w-full px-2 lg:px-4 mx-auto max-w-[1920px]">
+                                <div className="bg-white p-4 rounded-[16px] border border-slate-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-3 mb-4 ring-1 ring-slate-50">
+                                    <div className="flex flex-col gap-0.5 w-full lg:w-auto shrink-0">
+                                        <h3 className="text-lg font-black text-slate-800 uppercase italic">ANALİZ KRİTERİ</h3>
+                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">FİLTRELENEN DEĞERLERE GÖRE {channelFilter !== 'all' ? 'SİPARİŞ' : 'LEAD TIME'} SIRALAMASI</p>
+                                    </div>
+                                    <div className="flex flex-nowrap items-center justify-start lg:justify-end gap-2 w-full overflow-x-auto pb-1 custom-scrollbar hide-scroll">
+                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shrink-0">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">BÖLGE MÜDÜRÜ:</span>
+                                            <select className="bg-white text-slate-800 border border-slate-200 font-black rounded-md px-2 h-[26px] outline-none text-[11px] cursor-pointer shadow-sm" value={top15ZoneManager} onChange={(e) => setTop15ZoneManager(e.target.value)}>
+                                                <option value="all">TÜM BÖLGE MÜDÜRLERİ</option>
+                                                {zoneManagers.map(zm => <option key={zm} value={zm}>{zm}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 shrink-0">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">TOPLAMA &lt;</span>
+                                            <div className="flex gap-1">
+                                                {[5, 10, 15, 20].map(val => (
+                                                    <button key={val} onClick={() => setTop15Threshold(val)} className={`w-8 h-[26px] rounded-md font-black text-[11px] transition-all ${top15Threshold === val ? 'bg-orange-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-400 hover:bg-slate-200'}`}>
+                                                        {val}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-200 pr-1.5 shrink-0">
+                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest pl-1">OPH &gt;=</span>
+                                            <input type="number" step="0.1" value={top15OphThreshold} onChange={(e) => setTop15OphThreshold(Number(e.target.value) || 0)} className="w-12 h-[26px] text-center rounded bg-white border border-slate-200 text-slate-800 font-black outline-none text-[12px] shadow-inner" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <ColumnHeader />
+                                <div className="grid grid-cols-1 gap-2">
+                                    {top15List.map((s) => <GridCardComp key={s.region_id} s={s} stats={s.stats} trend={s.trend} neighbors={getNeighborsForStore(s, false)} isNeighborCard={false} onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />)}
+                                    {top15List.length === 0 && (
+                                        <div className="bg-white p-12 rounded-[24px] border-4 border-dashed border-slate-200 text-center shadow-sm col-span-1">
+                                            <p className="text-xl font-black text-slate-300 uppercase italic">Kriterlere uygun mağaza bulunamadı.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* MODALS */}
+                        {showOfflineModal && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay animate-in" onClick={() => setShowOfflineModal(false)}>
+                                <div className="bg-white w-full max-w-5xl rounded-[24px] max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-[4px] border-red-500/10 ring-1 ring-red-200" onClick={e => e.stopPropagation()}>
+                                    <div className="p-5 border-b border-red-50 flex justify-between items-center bg-red-50/30">
+                                        <h2 className="text-2xl font-black italic uppercase text-red-900 tracking-tighter">KRİTİK OFFLINE ANALİZİ</h2>
+                                        <div className="flex gap-2">
+                                            <button onClick={copyExcelOfflineList} className="bg-slate-900 text-white px-5 py-2 rounded-lg font-black text-[10px] uppercase shadow-md hover:bg-slate-800 transition-all">LİSTEYİ KOPYALA</button>
+                                            <button onClick={() => setShowOfflineModal(false)} className="bg-white border border-red-200 text-red-500 hover:text-red-800 px-3 py-1 rounded-lg transition-all shadow-sm font-black text-lg">✕</button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-5 space-y-4">
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {courierStats.filter(g => (g.offline + g.kayip) > 0).sort((a,b) => (b.offline + b.kayip) - (a.offline + a.kayip)).map((g, i) => (
+                                                <div key={i} className="bg-white p-4 rounded-[16px] border border-slate-100 flex flex-col gap-4 shadow-sm hover:border-red-300 transition-all">
+                                                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <p className="text-xl font-black text-slate-900 uppercase truncate leading-tight cursor-pointer hover:text-blue-600 transition-colors flex items-center gap-2" onClick={() => setExpandedOfflineStore(expandedOfflineStore === g.storeName ? null : g.storeName)}>
+                                                                    {g.storeName}
+                                                                    <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-2 py-1 rounded border border-slate-200">{expandedOfflineStore === g.storeName ? 'GİZLE ▲' : 'GENEL ÖZET ▼'}</span>
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <div className="bg-blue-50 text-blue-700 border border-blue-200 rounded px-2 py-0.5 font-black text-[11px] italic">OPH {g.perf?.oph?.toFixed(2) || '0.00'}</div>
+                                                                {g.perf && (
+                                                                    <div className="flex gap-1.5">
+                                                                        <div className="bg-orange-50 border border-orange-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                                                            <span className="text-[9px] font-black text-orange-600 uppercase">TOP</span>
+                                                                            <span className="text-[12px] font-black text-orange-800">{(g.perf.hemenToplama || 0).toFixed(1)}</span>
+                                                                        </div>
+                                                                        <div className="bg-blue-50 border border-blue-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                                                            <span className="text-[9px] font-black text-blue-600 uppercase">ATM</span>
+                                                                            <span className="text-[12px] font-black text-blue-800">{(g.perf.hemenAtama || 0).toFixed(1)}</span>
+                                                                        </div>
+                                                                        <div className="bg-red-50 border border-red-200 px-2 py-0.5 rounded flex items-center gap-1">
+                                                                            <span className="text-[9px] font-black text-red-600 uppercase">LT</span>
+                                                                            <span className="text-[12px] font-black text-red-800">{(g.perf.hemenLT || 0).toFixed(1)}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="bg-red-600 text-white font-black text-4xl px-6 py-3 rounded-[16px] shadow-md leading-none">{g.offline + g.kayip}</div>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 border-t border-slate-50 pt-3">
+                                                        {g.couriers.filter(c => (c.status || "").toLowerCase().includes('off') || (c.status || "").toLowerCase().includes('kay')).map((c, ci) => (
+                                                            <div key={ci} className="bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg flex items-center justify-between gap-2">
+                                                                <span className="text-[11px] font-black text-red-900 uppercase italic truncate">{c.courierName}</span>
+                                                                <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded uppercase font-black">{c.status}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    {expandedOfflineStore === g.storeName && g.perf && (
+                                                        <div className="col-span-full mt-3 pt-3 border-t-2 border-slate-100">
+                                                            <GridCardComp s={g.perf} stats={g.perf.stats} trend={g.perf.trend} neighbors={getNeighborsForStore(g.perf, false)} isNeighborCard={false} isManual={false} onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeNeighborModalStore && activeNeighborModalList && (
+                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay animate-in" onClick={() => setNeighborModalConfig(null)}>
+                                <div className="bg-slate-50 w-full max-w-4xl rounded-[24px] max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border-[4px] border-emerald-500/10 ring-1 ring-emerald-200" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 border-b border-emerald-100 flex justify-between items-center bg-white shadow-sm z-10">
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-black text-[10px] uppercase tracking-widest">ÇEVRE ANALİZİ</span>
+                                                <h2 className="text-[16px] font-black italic uppercase text-slate-800 tracking-tighter">
+                                                    {activeNeighborModalStore.clean}
+                                                </h2>
+                                            </div>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activeNeighborModalList.length} UYGUN MAĞAZA BULUNDU</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={() => {
+                                                const queue = activeNeighborModalList.map(n => n.clean).filter(Boolean);
+                                                if(queue.length > 0) {
+                                                    setBotStatus({ active: true, remaining: queue.length, percent: 0, text: "Öncelikli Tarama Başlıyor..." });
+                                                    try { document.dispatchEvent(new CustomEvent('START_BOT', { detail: queue })); } catch(e) {}
+                                                    setNeighborModalConfig(null);
+                                                }
+                                            }} className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-black text-[11px] uppercase shadow-md transition-all flex items-center gap-1.5 border-2 border-orange-400">
+                                                ⚡ SADECE BU MAĞAZALARI TARA
+                                            </button>
+                                            <button onClick={() => setNeighborModalConfig(null)} className="bg-slate-100 border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 px-3 py-1 rounded-lg transition-all shadow-sm font-black text-lg">✕</button>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                        {activeNeighborModalList.length === 0 ? (
+                                            <div className="text-center text-sm font-black text-slate-400 uppercase py-10 bg-white rounded-xl border-2 border-dashed border-slate-200 shadow-sm">
+                                                UYGUN MAĞAZA BULUNAMADI
+                                            </div>
+                                        ) : (
+                                            activeNeighborModalList.map(n => <ModalNeighborCard key={n.region_id} n={n} isBad={Math.abs((n.trendLt || 0) - (n.trendTop || 0)) > 18 || (n.stats?.online < 5)} onUpdateTrend={updateTrendGlobally} />)
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
+                        {storeDetailModalId && activeDetailStore && (
+                            <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 modal-overlay animate-in" onClick={() => setStoreDetailModalId(null)}>
+                                <div className="bg-slate-50 w-full max-w-6xl rounded-[24px] max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border-[4px] border-blue-500/10 ring-1 ring-blue-200" onClick={e => e.stopPropagation()}>
+                                    <div className="p-4 border-b border-blue-100 flex justify-between items-center bg-white shadow-sm z-10">
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-black text-[10px] uppercase tracking-widest">MAĞAZA DETAYI</span>
+                                                <h2 className="text-xl font-black italic uppercase text-slate-800 tracking-tighter">
+                                                    {activeDetailStore.clean}
+                                                </h2>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setStoreDetailModalId(null)} className="bg-slate-100 border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 hover:border-red-200 px-3 py-1 rounded-lg transition-all shadow-sm font-black text-lg">✕</button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                        <ColumnHeader />
+                                        <GridCardComp s={activeDetailStore} stats={activeDetailStore.stats} trend={activeDetailStore.trend} neighbors={getNeighborsForStore(activeDetailStore, false)} isNeighborCard={false} isManual={false} onUpdateTrend={updateTrendGlobally} onCopySupport={handleCopySupport} onShowNeighbors={handleShowNeighborsModal} channelFilter={channelFilter} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </Fragment>
+                );
+            };
+
+            return (
+                <div className="min-h-screen pb-16 relative">
+                    <datalist id="all-stores-list">
+                        {storesWithMetrics.map(s => (
+                            <option key={s.region_id} value={s.clean}>[{normalizeCode(s.region_id)}] {s.city}</option>
+                        ))}
+                    </datalist>
+
+                    <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200 px-4 py-3 flex flex-col md:flex-row justify-between items-center sticky top-0 z-50 shadow-sm gap-3">
+                        <div className="flex items-center gap-3 w-full md:w-auto flex-1">
+                            <div className="bg-orange-600 p-1.5 rounded text-white shadow-sm rotate-2 transform hover:rotate-0 transition-all duration-300">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/></svg>
+                            </div>
+                            <h1 className="font-black text-xl tracking-tighter italic uppercase text-slate-900">PAKETTAXI <span className="text-orange-600 not-italic">YÖNLENDİRME</span></h1>
+                        </div>
+                        
+                        <div className="flex flex-col items-center gap-2">
+                            <nav className="flex flex-wrap justify-center bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200">
+                                {['upload', 'dashboard', 'support', 'top15', 'critical'].map(v => (
+                                    <button key={v} onClick={() => { setView(v); setSearch(''); }} className={`px-3 py-1.5 rounded text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${view === v ? 'bg-white shadow-sm text-orange-600' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200'}`}>
+                                        {v === 'upload' ? 'YÜKLE' : v === 'dashboard' ? 'DASHBOARD' : v === 'support' ? 'DESTEK & YÖNLENDİRME' : v === 'top15' ? 'TOP 15' : 'KRİTİK'}
+                                    </button>
+                                ))}
+                            </nav>
+                        </div>
+                        
+                        <div className="flex items-center justify-end w-full md:w-auto flex-1 gap-2 flex-wrap">
+                            {view !== 'upload' && (
+                                <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-200 shadow-sm shrink-0">
+                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest hidden lg:inline">DİKEY:</span>
+                                    <select className="bg-white text-slate-800 border border-slate-200 font-black rounded px-1.5 py-0.5 outline-none text-[10px] cursor-pointer shadow-sm uppercase" value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)}>
+                                        <option value="all">TÜMÜ</option>
+                                        <option value="hemen">HEMEN</option>
+                                        <option value="yemek">YEMEK</option>
+                                        <option value="dk45">45 DK</option>
+                                    </select>
+                                </div>
+                            )}
+                            
+                            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-md border border-slate-200 shadow-sm shrink-0">
+                                <span className="text-[9px] font-black text-slate-500 uppercase ml-1 hidden lg:inline">MOD:</span>
+                                <select 
+                                    className="bg-white border-none font-black text-slate-800 text-[10px] outline-none cursor-pointer py-1 px-1.5 rounded uppercase shadow-sm"
+                                    value={botScanMode}
+                                    onChange={(e) => setBotScanMode(e.target.value)}
+                                >
+                                    <option value="all">🎯 TÜMÜNÜ TARA</option>
+                                    <option value="main">🏢 SADECE LİSTE</option>
+                                    <option value="neighbors">🏘️ SADECE KOMŞULAR</option>
+                                </select>
+                            </div>
+
+                            {botStatus.active && (
+                                <div className="flex items-center gap-2 bg-slate-100 px-2 py-1 rounded-md border border-slate-200 shadow-sm animate-in shrink-0">
+                                    <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <span className="text-[10px] font-black text-slate-800">%{botStatus.percent}</span>
+                                </div>
+                            )}
+                            <button onClick={toggleAutoBot} className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1 max-w-[150px] shrink-0 ${botStatus.active ? 'bg-red-100 text-red-800 border border-red-300 hover:bg-red-200' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+                                {botStatus.active ? '🛑 DURDUR' : '🤖 BOTU BAŞLAT'}
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="centering-container mt-4">
+                        {renderView()}
+                    </main>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
