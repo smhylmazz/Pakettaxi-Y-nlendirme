@@ -5,7 +5,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/11.9.1/firebase
 
 // BURAYA FIREBASE CONSOLE'DAN GELEN firebaseConfig GELECEK
 const firebaseConfig = {
-  // apiKey: "AIzaSyA3If6Dw02u86lERztg3P05GLfac1C0jLI",
+    apiKey: "AIzaSyA3If6Dw02u86lERztg3P05GLfac1C0jLI",
     authDomain: "yonlendirme-81a45.firebaseapp.com",
     projectId: "yonlendirme-81a45",
     storageBucket: "yonlendirme-81a45.firebasestorage.app",
